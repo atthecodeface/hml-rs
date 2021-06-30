@@ -110,9 +110,8 @@ impl <'a, 'b> Iterator for NamespaceStackIterator<'a, 'b> {
 /// ```
 /// use hml::{NamespaceStack, Namespace};
 ///
-/// let mut ns  = Namespace::new();
+/// let mut ns  = Namespace::new(true);
 /// let mut nst = NamespaceStack::new(&mut ns);
-/// nst.add_default_xmls();
 ///
 /// ```
 ///
@@ -126,7 +125,18 @@ impl <'a> NamespaceStack<'a> {
     pub fn new(namespaces: &'a mut Namespace) -> Self {
         let mut frames = Vec::new();
         frames.push(NamespaceStackFrame::new());
-        Self { namespaces, frames }
+        let mut s = Self { namespaces, frames };
+        if s.uses_xmlns() {
+            s.add_default_xmls();
+        } else {
+            s.add_null_ns();
+        }
+        s
+    }
+
+    //mp uses_xmlns
+    pub fn uses_xmlns(&self) -> bool {
+        self.namespaces.uses_xmlns()
     }
 
     //mp add_null_ns
@@ -267,7 +277,7 @@ mod test {
     }
     #[test]
     fn test_defaults() {
-        let mut ns  = Namespace::new();
+        let mut ns  = Namespace::new(false);
         let mut nst = NamespaceStack::new(&mut ns);
 
         nst.add_default_xmls();

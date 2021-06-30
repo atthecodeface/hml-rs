@@ -17,6 +17,7 @@ pub trait NamespaceDisplay {
 ///
 /// More complex implementations will move to using BTree for the prefixes
 pub struct Namespace {
+    xmlns : bool,
      /// ALl the
     prefixes : Vec<String>,
     uris     : Vec<String>,
@@ -27,12 +28,17 @@ pub struct Namespace {
 impl Namespace {
     //fp new
     /// Create a new Namespace object
-    pub fn new() -> Self {
+    pub fn new(xmlns:bool) -> Self {
         let uris = Vec::new();
         let prefixes = Vec::new();
         let names = Vec::new();
         let mappings = HashSet::new();
-        Self { uris, prefixes, names, mappings }
+        Self { xmlns, uris, prefixes, names, mappings }
+    }
+
+    //mp uses_xmlns
+    pub fn uses_xmlns(&self) -> bool {
+        self.xmlns
     }
 
     //mp find_name

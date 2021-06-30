@@ -32,6 +32,17 @@ pub struct Attribute {
 
 impl Attribute {
     pub fn new(ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> MarkupResult<Self> {
+        if ns_stack.uses_xmlns() {
+            if prefix == "" && name == "xmlns" {
+                println!("Add ns '' to be {}",value);
+                ns_stack.add_ns( "", &value );
+                let name = Name::new(ns_stack, name, name)?;
+                return Ok(Self { name, value });
+            } else if prefix == "xmlns" {
+                println!("Add ns {} to be value {}", name, value);
+                ns_stack.add_ns( name, &value );
+            }
+        }
         let name = Name::new(ns_stack, prefix, name)?;
         Ok(Self { name, value })
     }
@@ -64,27 +75,4 @@ impl Attributes {
     pub fn take(self) -> Vec<Attribute>  {
         self.attributes
     }
-    /*
-    pub fn to_attributes(&self) -> Vec<(String,String)> {
-        self.attributes
-            .iter()
-            .map( |(n,v)| (n.name.clone(),v.clone()) )
-            .collect()
-    }
-*/
-    /*
-    pub fn as_xml_attributes<'a> (&'a self) -> Cow<'a, [XmlAttribute<'a>]> {
-        self.attributes
-            .iter()
-            .map( |(n,v)| XmlAttribute::new(n.as_xml_name(), v) )
-            .collect()
-    }
-     */
-    /*
-    pub fn iter_attributes(&self) -> impl Iterator<Item = (&str, &str)> {
-        self.attributes
-            .iter()
-            .map( |(n,v)| (n.name.as_str(), v.as_str()) )
-    }
-*/
 }

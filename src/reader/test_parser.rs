@@ -35,6 +35,7 @@ mod tests {
                     false
                 } else {
                     for (e,a) in attrs.iter().zip(tag_attrs) {
+                        println!("Check attrs {:?} {:?} {} {}",e,a, ns_stack.borrow_uri(a.name.uri), ns_stack.borrow_name(a.name.name));
                         if ns_stack.borrow_uri(a.name.uri)   != e.0   { return false; }
                         if ns_stack.borrow_name(a.name.name) != e.1 { return false; }
                         if a.value != e.2 { return false; }
@@ -56,6 +57,9 @@ mod tests {
         }
         fn check_expectation(&mut self, ns_stack:&NamespaceStack, t:Result<Event<Span<StringPos>>,ReaderError<StringReader>>) -> Result<(), String> {
             self.index += 1;
+            if self.index > self.expectations.len() {
+                return Err(format!("Ran out of expectations, got {:?}",t));
+            }
             let (failure_string, pass) = {
                 match self.expectations[self.index-1] {
                     Expectation::StD(v) => {
@@ -111,7 +115,7 @@ mod tests {
 
     fn test_string(s:&str, exp:&[Expectation]) {
         let mut expectation = ExpectationState::new(exp);
-        let mut namespace = Namespace::new();
+        let mut namespace = Namespace::new(true);
         let mut namespace_stack = NamespaceStack::new(&mut namespace);
         namespace_stack.add_null_ns();
         let mut reader = StringReader::new(s);
@@ -243,13 +247,13 @@ mod tests {
                              EndD
                        ] );
     }
-    // #[test]
+    #[test]
     fn test_ns() {
         use Expectation::*;
         test_string( "#svg ##box{ xmlns='https://fred' ##box} ##line ",
                        &[StD(100),
                              StE("", "svg",  &[ ]),
-                             StE("https://fred", "box",  &[ ("", "xmlns", "https://fred")]),
+                             StE("https://fred", "box",  &[ ("http://www.w3.org/2000/xmlns/", "xmlns", "https://fred")]),
                              EndE,
                              StE("", "line", &[ ]),
                              EndE,
@@ -257,13 +261,27 @@ mod tests {
                              EndD
                        ] );
     }
-    // #[test]
+    #[test]
     fn test_ns2() {
         use Expectation::*;
-        test_string( "#svg ##box{ xmlns='https://fred' ##box} ##line ",
+        test_string( "#svg ##box{ xmlns='https://fred' b='2' ##box} ##line ",
                        &[StD(100),
                              StE("", "svg",  &[ ]),
-                             StE("https://fred", "box",  &[ ("", "a", "1"), ("", "b", "2"), ]),
+                             StE("https://fred", "box",  &[ ("http://www.w3.org/2000/xmlns/", "xmlns", "https://fred"), ("https://fred", "b", "2"), ]),
+                             EndE,
+                             StE("", "line", &[ ]),
+                             EndE,
+                             EndE,
+                             EndD
+                       ] );
+    }
+    #[test]
+    fn test_ns3() {
+        use Expectation::*;
+        test_string( "#svg ##box{ xmlns:blob='https://fred' b='2' ##box} ##line ",
+                       &[StD(100),
+                             StE("", "svg",  &[ ]),
+                             StE("", "box",  &[ ("http://www.w3.org/2000/xmlns/", "blob", "https://fred"), ("", "b", "2"), ]),
                              EndE,
                              StE("", "line", &[ ]),
                              EndE,
