@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use crate::{ReaderPosition};
 use super::Span;
 
@@ -30,7 +31,7 @@ pub enum TokenType {
 pub struct Token<P:ReaderPosition> {
     span : Span<P>,
     tt   : TokenType,
-    contents: Vec<String>,
+    contents: VecDeque<String>,
     depth: usize,
     boxed : bool,
 }
@@ -39,13 +40,13 @@ pub struct Token<P:ReaderPosition> {
 impl <P:ReaderPosition> Token<P> {
     //fi new
     fn new(span:Span<P>, tt:TokenType, depth:usize, boxed:bool) -> Self {
-        let contents = Vec::new();
+        let contents = VecDeque::new();
         Self { span, tt, contents, depth, boxed }
     }
 
     //cp add_string
     pub fn add_string(mut self, s:String) -> Self {
-        self.contents.push(s);
+        self.contents.push_back(s);
         self
     }
 
@@ -119,7 +120,7 @@ impl <P:ReaderPosition> Token<P> {
     }
 
     //mp take_contents
-    pub fn take_contents(&mut self) -> Vec<String> {
+    pub fn take_contents(&mut self) -> VecDeque<String> {
         self.contents.split_off(0)
     }
 

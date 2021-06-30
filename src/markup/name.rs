@@ -1,7 +1,25 @@
+/*a Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    name.rs
+@brief   Markup name (prefix => URI and name within namespace)
+ */
+
 //a Imports
 use crate::{NSNameId, NSPrefixId, NSUriId};
 use crate::NamespaceStack;
-use crate::HmlError;
+use crate::{MarkupResult, MarkupError};
 
 //a Name
 //tp Name
@@ -21,10 +39,17 @@ pub struct Name {
 
 //ip Name
 impl Name {
+    //fp none
+    pub fn none() -> Self {
+        let prefix = NSPrefixId::none();
+        let uri = NSUriId::none();
+        let name = NSNameId::none();
+        Self { prefix, uri, name }
+    }
     //fp new_local
-    pub fn new_local(ns:&mut NamespaceStack, name:&str) -> Result<Self, HmlError> {
+    pub fn new_local(ns:&mut NamespaceStack, name:&str) -> MarkupResult<Self> {
         if name.is_empty() {
-            return HmlError::empty_name()
+            return MarkupError::empty_name()
         }
         let prefix = NSPrefixId::none();
         let uri    = NSUriId::none();
@@ -33,29 +58,29 @@ impl Name {
     }
 
     //fp new
-    pub fn new(ns:&mut NamespaceStack, prefix:&str, name:&str) -> Result<Self, HmlError> {
+    pub fn new(ns:&mut NamespaceStack, prefix:&str, name:&str) -> MarkupResult<Self> {
         if name.is_empty() {
-            return HmlError::empty_name()
+            return MarkupError::empty_name()
         }
         if let Some(p_id) = ns.find_prefix_id(prefix) {
             if let Some(uri) = ns.find_mapping(p_id) {
                 let name   = ns.add_name(name);
                 Ok(Self { prefix:p_id, uri, name })
             } else {
-                HmlError::unmapped_prefix(prefix)
+                MarkupError::unmapped_prefix(prefix)
             }
         } else {
-            HmlError::unmapped_prefix(prefix)
+            MarkupError::unmapped_prefix(prefix)
         }
     }
 
     //fp from_str
-    pub fn from_str(ns:&mut NamespaceStack, s:&str) -> Result<Self, HmlError> {
+    pub fn from_str(ns:&mut NamespaceStack, s:&str) -> MarkupResult<Self> {
         let mut it = s.split(':');
         match (it.next(), it.next(), it.next()) {
             (Some(prefix), Some(name), None) => Self::new(ns, prefix, name),
             (Some(name), None, None)         => Self::new_local(ns, name),
-            _ => HmlError::bad_name(s),
+            _ => MarkupError::bad_name(s),
         }
     }
 }

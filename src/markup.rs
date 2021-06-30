@@ -4,6 +4,7 @@
 // identifiers, mappings between them, and stacks of valid mappings
 // that change as a document is parsed.
 //
+mod error;
 mod ids;
 mod namespace;
 mod namespace_stack;
@@ -13,6 +14,7 @@ mod tag;
 mod event;
 
 
+pub use error::{MarkupError, MarkupResult};
 pub use ids::{NSNameId, NSPrefixId, NSUriId, NSMap};
 pub use namespace::Namespace;
 pub use namespace_stack::NamespaceStack;

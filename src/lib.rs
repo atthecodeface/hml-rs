@@ -4,15 +4,14 @@
 // identifiers, mappings between them, and stacks of valid mappings
 // that change as a document is parsed.
 //
-mod error;
 mod traits;
 mod markup;
 
 mod reader;
 
-pub use error::HmlError;
 pub use traits::{ReaderPosition, ReaderChar, Reader, StreamSpan};
 
+pub use markup::{MarkupError, MarkupResult};
 pub use markup::{NSNameId, NSPrefixId, NSUriId, NSMap};
 pub use markup::{Namespace, NamespaceStack, Name, Attribute, Attributes, Tag, Event};
 
