@@ -19,7 +19,8 @@ limitations under the License.
 //a Imports
 use crate::{MarkupResult, Tag, Name, Attributes, Event, NamespaceStack};
 use crate::reader::{Reader, Position};
-use super::{Span, Error, Result};
+use super::{Span, Error};
+type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
 //tp OpenTag

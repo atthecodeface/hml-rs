@@ -18,12 +18,12 @@ limitations under the License.
 
 //a Position trait
 //tt Position
-pub trait Position : Clone + Copy + std::fmt::Debug + std::fmt::Display {
+pub trait Position : Clone + Copy + std::fmt::Debug + std::fmt::Display + 'static {
     fn none() -> Self;
 }
 
 //tt Character
-pub trait Character : Clone + Copy + std::fmt::Debug + std::fmt::Display {
+pub trait Character : Clone + Copy + std::fmt::Debug + std::fmt::Display + 'static {
     fn is_eof(&self)     -> bool;
     fn is_not_rdy(&self) -> bool;
     fn as_char(&self)    -> Option<char>;

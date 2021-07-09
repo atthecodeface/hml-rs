@@ -20,7 +20,8 @@ limitations under the License.
 use crate::{Event, NamespaceStack};
 use crate::reader::{Reader, Position};
 use super::{Token, TokenType, Span, OpenTag, CloseTag, StackElement};
-use super::{Error, Result};
+use super::{Error};
+type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
 //ti TagExtra

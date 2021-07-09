@@ -10,13 +10,13 @@ mod builder;
 mod test_lexer;
 mod test_parser;
 
-pub(self) use error::{Error, Result};
 
 pub(self) use token::{Token, TokenType};
 pub(self) use builder::{OpenTag, CloseTag, StackElement};
-pub(self) use span::Span;
 
+pub use error::{Error, Result};
 pub use lexer::Lexer;
 pub use parser::Parser;
+pub use span::Span;
 pub use traits::{Position, Character, Reader};
 

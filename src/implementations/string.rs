@@ -142,6 +142,13 @@ impl <'a> Reader<'a> {
         Self { s, chars:s.chars(), line_starts, n:Position::none() }
     }
 
+    //fp of_file
+    /// Create a new [Reader] by borrowing the `str` to read over
+    pub fn of_file(f:&mut dyn std::io::Read, contents:&'a mut String) -> std::io::Result<Self> {
+        f.read_to_string(contents)?;
+        Ok(Self::new(contents))
+    }
+
     //fi fmt_line
     /// Output a single line of text to a formatter given a line number
     fn fmt_line(&self, f: &mut std::fmt::Formatter, line_num:usize)  -> std::fmt::Result {

@@ -58,7 +58,7 @@ mod tests {
                 false
             }
         }
-        fn check_expectation(&mut self, ns_stack:&NamespaceStack, t:Result<Event,ReaderError<Reader>>) -> Result<(), String> {
+        fn check_expectation(&mut self, ns_stack:&NamespaceStack, t:Result<Event,ReaderError<Position, std::io::Error>>) -> Result<(), String> {
             self.index += 1;
             if self.index > self.expectations.len() {
                 return Err(format!("Ran out of expectations, got {:?}",t));
@@ -123,7 +123,7 @@ mod tests {
         namespace_stack.add_null_ns();
         let mut reader = Reader::new(s);
         let mut lexer  = Lexer::new();
-        let mut parser  = Parser::new();
+        let mut parser : Parser::<Reader>  = Parser::new();
         let mut errors = Vec::new();
         loop {
             let t = parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader));

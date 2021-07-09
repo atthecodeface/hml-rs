@@ -18,12 +18,13 @@ limitations under the License.
 
 //a Imports
 use crate::{MarkupError, MarkupResult};
-use super::{Reader, Span};
+use super::{Reader, Position, Span};
 
 //a Result
 //tp Result
 /// The [Result] type is a result with an error type of [crate::Error]
-pub type Result<R, T> = std::result::Result<T, Error<R>>;
+// pub type Result<T, P:Position, E:std::error::Error +'static> = std::result::Result<T, Error<P, E>>;
+pub type Result<T, P, E> = std::result::Result<T, Error<P, E>>;
 
 //a Error
 //tp Error
@@ -31,46 +32,52 @@ pub type Result<R, T> = std::result::Result<T, Error<R>>;
 /// either an IO error from the reader or a malformed UTF-8 encoded
 /// set of bytes.
 #[derive(Debug)]
-pub enum Error<R:Reader> {
+pub enum Error<P, E>
+where P:Position, E:std::error::Error +'static
+{
     /// A UTF8 error
-    Utf8Error(R::Position, R::Error),
-    MarkupError(Span<R::Position>, MarkupError),
-    UnexpectedCharacter(Span<R::Position>, char),
+    Utf8Error(P, E),
+    MarkupError(Span<P>, MarkupError),
+    UnexpectedCharacter(Span<P>, char),
     /// Expected a depth of N or N+1
-    UnexpectedTagIndent(Span<R::Position>, usize),
+    UnexpectedTagIndent(Span<P>, usize),
     BeyondEndOfTokens,
-    UnexpectedAttribute(Span<R::Position>, String),
-    UnexpectedEOF(Span<R::Position>),
+    UnexpectedAttribute(Span<P>, String),
+    UnexpectedEOF(Span<P>),
 }
 
 //ip Error
-impl <R:Reader> Error<R> {
-    pub fn of_reader<T>(reader:&R, reader_error:R::Error) -> Result<R, T> {
+impl <P, E> Error<P, E>
+where P:Position, E:std::error::Error +'static
+{
+    pub fn of_reader<T, R>(reader:&R, reader_error:E) -> Result<T, P, E>
+    where R:Reader<Position = P, Error = E>
+    {
         let posn = reader.borrow_pos();
         Err(Self::Utf8Error(*posn, reader_error))
     }
-    pub fn unexpected_eof<T>(start:&R::Position, end:&R::Position) -> Result<R, T> {
+    pub fn unexpected_eof<T>(start:&P, end:&P) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::UnexpectedEOF(span))
     }
-    pub fn unexpected_character<T>(start:&R::Position, end:&R::Position, ch:char) -> Result<R, T> {
+    pub fn unexpected_character<T>(start:&P, end:&P, ch:char) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::UnexpectedCharacter(span, ch))
     }
-    pub fn no_more_events<T>() -> Result<R, T> {
+    pub fn no_more_events<T>() -> Result<T, P, E>{
         Err(Self::BeyondEndOfTokens)
     }
-    pub fn unexpected_tag_indent<T>(span:Span<R::Position>, depth:usize) -> Result<R, T> {
+    pub fn unexpected_tag_indent<T>(span:Span<P>, depth:usize) -> Result<T, P, E> {
         Err(Self::UnexpectedTagIndent(span, depth))
     }
-    pub fn unexpected_attribute<T>(span:Span<R::Position>, prefx:&str, name:&str) -> Result<R, T> {
+    pub fn unexpected_attribute<T>(span:Span<P>, prefx:&str, name:&str) -> Result<T, P, E> {
         let name = format!("{}:{}", prefx, name);
         Err(Self::UnexpectedAttribute(span, name))
     }
-    pub fn of_markup_error(span:Span<R::Position>, e:MarkupError) -> Self {
+    pub fn of_markup_error(span:Span<P>, e:MarkupError) -> Self {
         Self::MarkupError(span, e)
     }
-    pub fn of_markup_result<T>(span:Span<R::Position>, r:MarkupResult<T>) -> Result<R, T> {
+    pub fn of_markup_result<T>(span:Span<P>, r:MarkupResult<T>) -> Result<T, P, E> {
         match r {
             Ok(t) => Ok(t),
             Err(e) => Err(Self::of_markup_error(span, e)),
@@ -79,7 +86,9 @@ impl <R:Reader> Error<R> {
 }
 
 //ip std::fmt::Display for Error
-impl <R:Reader> std::fmt::Display for Error<R> {
+impl <P, E> std::fmt::Display for Error<P, E>
+where P:Position, E:std::error::Error +'static
+{
     //mp fmt - format a `Error` for display
     /// Display the `Error` in a human-readable form
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -92,7 +101,9 @@ impl <R:Reader> std::fmt::Display for Error<R> {
 }
 
 //ip std::error::Error for Error
-impl <R:Reader> std::error::Error for Error<R> {
+impl <P, E> std::error::Error for Error<P, E>
+where P:Position, E:std::error::Error +'static
+{
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Error::Utf8Error(_,e) => Some(e),
