@@ -44,7 +44,7 @@ limitations under the License.
 
 //a Imports
 use crate::reader::{Reader, Position, Character};
-use super::types::{Error, Result, Span};
+use super::{Error, Result, Span};
 use super::{Token};
 
 //a Utils
