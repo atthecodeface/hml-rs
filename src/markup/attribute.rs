@@ -75,4 +75,7 @@ impl Attributes {
     pub fn take(self) -> Vec<Attribute>  {
         self.attributes
     }
+    pub fn borrow(&self) -> &Vec<Attribute>  {
+        &self.attributes
+    }
 }

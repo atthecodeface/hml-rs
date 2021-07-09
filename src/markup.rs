@@ -1,9 +1,3 @@
-// Namespaces
-//
-// The Namespaces type contains sets of namespace URIs and
-// identifiers, mappings between them, and stacks of valid mappings
-// that change as a document is parsed.
-//
 mod error;
 mod ids;
 mod namespace;
@@ -22,4 +16,4 @@ pub use name::Name;
 pub use attribute::{Attribute, Attributes};
 pub use tag::Tag;
 
-pub use event::Event;
+pub use event::{Event, EventType};

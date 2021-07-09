@@ -46,6 +46,7 @@ impl Name {
         let name = NSNameId::none();
         Self { prefix, uri, name }
     }
+
     //fp new_local
     pub fn new_local(ns:&mut NamespaceStack, name:&str) -> MarkupResult<Self> {
         if name.is_empty() {
@@ -81,6 +82,17 @@ impl Name {
             (Some(prefix), Some(name), None) => Self::new(ns, prefix, name),
             (Some(name), None, None)         => Self::new_local(ns, name),
             _ => MarkupError::bad_name(s),
+        }
+    }
+
+    //fp to_string
+    pub fn to_string(&self, ns:&NamespaceStack) -> String {
+        if self.prefix.is_none() {
+            format!("{}", ns.borrow_name(self.name))
+        } else {
+            format!("{}:{}",
+                    ns.borrow_prefix(self.prefix),
+                    ns.borrow_name(self.name) )
         }
     }
 }

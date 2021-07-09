@@ -4,8 +4,11 @@
 #[allow(dead_code)]
 mod tests {
     use crate::{Namespace, NamespaceStack, Tag, Name};
-    use crate::{Event, ReaderError};
-    use crate::{StringReader, StringPos, Span, Parser, Lexer};
+    use crate::reader::{Parser, Lexer};
+    use crate::reader::Error as ReaderError;
+    use crate::string::Reader;
+    use crate::string::Position;
+    type Event = crate::Event<crate::reader::Span<Position>>;
     #[derive(Debug)]
     enum Expectation<'a> {
         StD(usize),
@@ -55,7 +58,7 @@ mod tests {
                 false
             }
         }
-        fn check_expectation(&mut self, ns_stack:&NamespaceStack, t:Result<Event<Span<StringPos>>,ReaderError<StringReader>>) -> Result<(), String> {
+        fn check_expectation(&mut self, ns_stack:&NamespaceStack, t:Result<Event,ReaderError<Reader>>) -> Result<(), String> {
             self.index += 1;
             if self.index > self.expectations.len() {
                 return Err(format!("Ran out of expectations, got {:?}",t));
@@ -118,7 +121,7 @@ mod tests {
         let mut namespace = Namespace::new(true);
         let mut namespace_stack = NamespaceStack::new(&mut namespace);
         namespace_stack.add_null_ns();
-        let mut reader = StringReader::new(s);
+        let mut reader = Reader::new(s);
         let mut lexer  = Lexer::new();
         let mut parser  = Parser::new();
         let mut errors = Vec::new();

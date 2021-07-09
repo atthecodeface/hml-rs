@@ -18,7 +18,8 @@ limitations under the License.
 
 //a Imports
 use crate::{MarkupError, MarkupResult};
-use crate::{StreamSpan, Reader, ReaderPosition};
+use crate::{StreamSpan};
+use super::{Position, Reader};
 
 //a Span
 //tp Span
@@ -28,12 +29,12 @@ use crate::{StreamSpan, Reader, ReaderPosition};
 ///
 /// For a simple span type the content
 #[derive(Copy, Clone, Debug)]
-pub struct Span<P:ReaderPosition> {
+pub struct Span<P:Position> {
     start : P,
     end   : P,
 }
 
-impl <P:ReaderPosition> Span<P> {
+impl <P:Position> Span<P> {
     pub fn new_at(posn:&P) -> Self {
         Self { start:*posn, end:*posn }
     }
@@ -50,7 +51,7 @@ impl <P:ReaderPosition> Span<P> {
 }
 
 //ip Display for Span
-impl <P:ReaderPosition> std::fmt::Display for Span<P> {
+impl <P:Position> std::fmt::Display for Span<P> {
     //mp fmt
     /// Format for humans
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -59,7 +60,7 @@ impl <P:ReaderPosition> std::fmt::Display for Span<P> {
 }
 
 //ip StreamSpan for Span
-impl <P:ReaderPosition> StreamSpan for Span<P> {
+impl <P:Position> StreamSpan for Span<P> {
 }
 
 //a Result

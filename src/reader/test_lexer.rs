@@ -4,12 +4,12 @@
 #[cfg(test)]
 mod tests {
     // use super::super::types::*;
-    use crate::{StringReader};
-    use super::super::{Lexer};
+    use crate::string::Reader;
+    use crate::reader::Lexer;
     #[test]
     fn test_blah() {
         let buf = "; This is a comment\n   ; with more comment\n #banana #fred:tob{ r='2' \"\"\"Stuff \"\"  and more \"\"\"";
-        let mut reader = StringReader::new(buf);
+        let mut reader = Reader::new(buf);
         let mut lexer  = Lexer::new();
         loop {
             let t = lexer.next_token(&mut reader);

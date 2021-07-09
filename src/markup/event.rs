@@ -1,12 +1,23 @@
 use crate::{StreamSpan, Tag, Name, NSNameId};
 
 //tp ContentType
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ContentType {
-    // CData should perhaps be Vec<u8>
     CData,
     Interpretable,
     Whitespace,
+}
+
+//tp Event
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum EventType {
+    StartDocument,
+    EndDocument,
+    StartElement,
+    EndElement,
+    Content,
+    ProcessingInstruction,
+    Comment,
 }
 
 //tp Event
@@ -86,6 +97,32 @@ impl <F:StreamSpan> Event<F> {
         Self::Content { span, ctype, data }
     }
 
+    //mp get_type
+    pub fn get_type(&self) -> EventType {
+        match self {
+            Self::StartDocument {..} => EventType::StartDocument,
+            Self::EndDocument {..} => EventType::EndDocument,
+            Self::StartElement {..} => EventType::StartElement,
+            Self::EndElement {..} => EventType::EndElement,
+            Self::Content {..} => EventType::Content,
+            Self::ProcessingInstruction {..} => EventType::ProcessingInstruction,
+            Self::Comment {..} => EventType::Comment,
+        }
+    }
+
+    //mp borrow_span
+    pub fn borrow_span(&self) -> &F {
+        match self {
+            Self::StartDocument {span,..} => span,
+            Self::EndDocument {span,..}   => span,
+            Self::StartElement {span,..}  => span,
+            Self::EndElement {span,..}    => span,
+            Self::Content {span,..}       => span,
+            Self::ProcessingInstruction {span,..} => span,
+            Self::Comment {span,..}       => span,
+        }
+    }
+
     //mp as_start_document
     pub fn as_start_document(&self) -> Option<usize> {
         match self { Self::StartDocument{ version, .. } => Some(*version), _ => None }
@@ -99,6 +136,16 @@ impl <F:StreamSpan> Event<F> {
     //mp as_end_element
     pub fn as_end_element(&self) -> Option<&Name> {
         match self { Self::EndElement{ name, .. } => Some(name), _ => None }
+    }
+
+    //mp as_content
+    pub fn as_content(&self) -> Option<(ContentType, &str)> {
+        match self { Self::Content{ ctype, data, .. } => Some((*ctype, data)), _ => None }
+    }
+
+    //mp is_start_document
+    pub fn is_start_document(&self) -> bool {
+        match self { Self::StartDocument{ .. } => true, _ => false }
     }
 
     //mp is_end_document

@@ -1,6 +1,24 @@
+/*a Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    token.rs
+@brief   Token used by the Lexer
+ */
+
+//a Imports
 use std::collections::VecDeque;
-use crate::{ReaderPosition};
-use super::Span;
+use super::{Position, Span};
 
 //a Token
 //tp Token
@@ -28,7 +46,7 @@ pub enum TokenType {
 }
 
 #[derive(Debug)]
-pub struct Token<P:ReaderPosition> {
+pub struct Token<P:Position> {
     span : Span<P>,
     tt   : TokenType,
     contents: VecDeque<String>,
@@ -37,7 +55,7 @@ pub struct Token<P:ReaderPosition> {
 }
 
 //ip Token
-impl <P:ReaderPosition> Token<P> {
+impl <P:Position> Token<P> {
     //fi new
     fn new(span:Span<P>, tt:TokenType, depth:usize, boxed:bool) -> Self {
         let contents = VecDeque::new();
@@ -136,7 +154,7 @@ impl <P:ReaderPosition> Token<P> {
 }
 
 //ip std::fmt::Display for Token
-impl <P:ReaderPosition> std::fmt::Display for Token<P> {
+impl <P:Position> std::fmt::Display for Token<P> {
     //mp fmt - format a `Token` for display
     /// Display the `Token` in a human-readable form
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

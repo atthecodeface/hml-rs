@@ -18,13 +18,13 @@ limitations under the License.
 
 //a Imports
 use crate::{MarkupResult, Tag, Name, Attributes, Event, NamespaceStack};
-use crate::{Reader, ReaderPosition};
+use crate::reader::{Reader, Position};
 use super::{Span, Error, Result};
 
 //a Internal types
 //tp OpenTag
 #[derive(Clone, Debug)]
-pub struct OpenTag<P:ReaderPosition, T:std::fmt::Debug> {
+pub struct OpenTag<P:Position, T:std::fmt::Debug> {
     span : Span<P>,
     prefix : String,
     name   : String,
@@ -32,7 +32,7 @@ pub struct OpenTag<P:ReaderPosition, T:std::fmt::Debug> {
 }
 
 //ip OpenTag
-impl <P:ReaderPosition, T:std::fmt::Debug> OpenTag<P, T> {
+impl <P:Position, T:std::fmt::Debug> OpenTag<P, T> {
     pub fn new(span:Span<P>, prefix:String, name:String, extra:T) -> Self {
         Self { span, prefix, name, extra }
     }
@@ -43,14 +43,14 @@ impl <P:ReaderPosition, T:std::fmt::Debug> OpenTag<P, T> {
 
 //tp CloseTag
 #[derive(Clone, Debug)]
-pub struct CloseTag<P:ReaderPosition, T:std::fmt::Debug> {
+pub struct CloseTag<P:Position, T:std::fmt::Debug> {
     span : Span<P>,
     name : Name,
     pub extra : T,
 }
 
 //ip CloseTag
-impl <P:ReaderPosition, T:std::fmt::Debug> CloseTag<P, T> {
+impl <P:Position, T:std::fmt::Debug> CloseTag<P, T> {
     pub fn new(span:Span<P>, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, extra:T) -> MarkupResult<Self> {
         let name = Name::new(ns_stack, prefix, name)?;
         Ok ( Self { span, name, extra } )
