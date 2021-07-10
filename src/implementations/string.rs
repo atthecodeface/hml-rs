@@ -49,7 +49,7 @@ impl Position {
         self.byte += ch.len_utf8();
         if ch == '\n' {
             self.line_num += 1;
-            self.char_num = 1;
+            self.char_num = 0;
         } else {
             self.char_num += 1;
         }
@@ -59,7 +59,7 @@ impl Position {
 //ip Reader::Position for Position
 impl reader::Position for Position {
     //fp none
-    fn none() -> Self { Self::new(0,1,1) }
+    fn none() -> Self { Self::new(0,1,0) }
 }
 
 //ip Display for Position
@@ -167,7 +167,7 @@ impl <'a> Reader<'a> {
         line_starts.push(0);
         for (b,c) in s.char_indices() {
             if c == '\n' {
-                line_starts.push(b);
+                line_starts.push(b+1);
             }
         }
         use crate::reader::Position;
@@ -228,7 +228,7 @@ impl <'a> reader::Reader for Reader<'a> {
     }
 
     fn fmt_context(&self, f: &mut dyn std::fmt::Write, start:&Position, end:&Position) -> std::fmt::Result {
-        if start.line_num == end.line_num || (start.line_num+1 == end.line_num && end.char_num == 1){
+        if start.line_num == end.line_num || (start.line_num+1 == end.line_num && end.char_num == 0){
             let mut num_chars = {
                 if start.line_num == end.line_num {
                     end.char_num - start.char_num
@@ -246,13 +246,35 @@ impl <'a> reader::Reader for Reader<'a> {
             self.fmt_line(f, start.line_num)?;
             write!(f, "\n")?;
             write!(f, "    |  ")?;
-            for _ in 1..(start.char_num-1) { f.write_char(' ')?; }
+            for _ in 1..(start.char_num) { f.write_char(' ')?; }
             for _ in 0..num_chars { f.write_char('^')?; }
             write!(f, "\n")?;
             write!(f, "    |  ")?;
             write!(f, "\n")?;
             Ok(())
         } else {
+            let first_line = if start.line_num > 1 {start.line_num-1} else {start.line_num};
+            let last_line  = if end.char_num == 0  {end.line_num}     else {end.line_num+1};
+            let num_lines  = if last_line <= first_line {1} else {last_line+1-first_line};
+            let (start_skip, end_skip) = if num_lines > 4 {(4,num_lines-4)} else {(1,0)};
+            let mut ellipses_output = false;
+            for i in 0..num_lines {
+                let l = first_line + i;
+                if i >= start_skip && i <= end_skip {
+                    if !ellipses_output {
+                        write!(f, "    |...\n")?;
+                        ellipses_output = true;
+                    }
+                    continue;
+                }
+                if l >= start.line_num && l <= end.line_num {
+                    write!(f, "{:4}|  ", l)?;
+                } else {
+                    write!(f, "    |  ")?;
+                }
+                self.fmt_line(f, l)?;
+                write!(f, "\n")?;
+            }
             Ok(())
         }
     }
