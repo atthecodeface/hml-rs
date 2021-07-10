@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{MarkupResult, Name, Attributes, NamespaceStack};
+use super::{Attributes, Name, NamespaceStack};
 
 //a Tag
 //tp Tag
@@ -34,7 +34,7 @@ pub struct Tag {
 
 //ip Tag
 impl Tag {
-    pub fn new(ns_stack:&mut NamespaceStack, ns:&str, name:&str, attributes:Attributes) -> MarkupResult<Self> {
+    pub fn new(ns_stack:&mut NamespaceStack, ns:&str, name:&str, attributes:Attributes) -> crate::markup::Result<Self> {
         let name = Name::new(ns_stack, ns, name)?;
         Ok(Self { name, attributes })
     }

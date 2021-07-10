@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{StreamSpan};
+use crate::markup;
 use super::{Position};
 
 //a Span
@@ -58,7 +58,7 @@ impl <P:Position> std::fmt::Display for Span<P> {
     }
 }
 
-//ip StreamSpan for Span
-impl <P:Position> StreamSpan for Span<P> {
+//ip crate::markup::Span for Span
+impl <P:Position> crate::markup::Span for Span<P> {
 }
 

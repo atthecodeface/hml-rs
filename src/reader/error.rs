@@ -17,7 +17,6 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{MarkupError, MarkupResult};
 use super::{Reader, Position, Span, Error};
 
 //a Result
@@ -38,7 +37,7 @@ where P:Position, E:Error<Position = P>
     /// An error from the underlying reader
     ReaderError(Span<P>, E),
     /// A markup error
-    MarkupError(Span<P>, MarkupError),
+    MarkupError(Span<P>, crate::markup::Error),
     /// An unexpected character
     UnexpectedCharacter(Span<P>, char),
     /// Expected a depth of N or N+1
@@ -91,10 +90,10 @@ where P:Position, E:Error<Position = P>
         let name = format!("{}:{}", prefx, name);
         Err(Self::UnexpectedAttribute(span, name))
     }
-    pub fn of_markup_error(span:Span<P>, e:MarkupError) -> Self {
+    pub fn of_markup_error(span:Span<P>, e:crate::markup::Error) -> Self {
         Self::MarkupError(span, e)
     }
-    pub fn of_markup_result<T>(span:Span<P>, r:MarkupResult<T>) -> Result<T, P, E> {
+    pub fn of_markup_result<T>(span:Span<P>, r:crate::markup::Result<T>) -> Result<T, P, E> {
         match r {
             Ok(t) => Ok(t),
             Err(e) => Err(Self::of_markup_error(span, e)),

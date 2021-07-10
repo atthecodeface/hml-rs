@@ -17,7 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{Event, NamespaceStack};
+use crate::names::{NamespaceStack};
+use crate::markup::{Event};
 use crate::reader::{Reader, Position};
 use super::{Token, TokenType, Span, OpenTag, CloseTag, StackElement};
 use super::{ReaderError};

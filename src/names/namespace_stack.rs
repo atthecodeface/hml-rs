@@ -1,8 +1,26 @@
+/*a Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    namespace_stack.rs
+@brief   A markup namespace stack with various frames
+ */
+
 /*a Imports
 */
-use std::collections::{HashSet, HashMap};
-use crate::{NSNameId, NSPrefixId, NSUriId, NSMap};
-use crate::Namespace;
+use std::collections::{HashMap, HashSet};
+use super::{NSNameId, NSPrefixId, NSUriId, NSMap};
+use super::Namespace;
 
 //a NamespaceStackFrame, NamespaceStack, and StackIter
 //ti NamespaceStackFrame
@@ -108,7 +126,7 @@ impl <'a, 'b> Iterator for NamespaceStackIterator<'a, 'b> {
 /// # Example
 ///
 /// ```
-/// use hml::{NamespaceStack, Namespace};
+/// use hml::names::{NamespaceStack, Namespace};
 ///
 /// let mut ns  = Namespace::new(true);
 /// let mut nst = NamespaceStack::new(&mut ns);
@@ -267,7 +285,7 @@ impl <'a, 'b> IntoIterator for &'b NamespaceStack<'a> {
 //a Test
 #[cfg(test)]
 mod test {
-    use super::{NamespaceStack, Namespace};
+    use crate::names::{NamespaceStack, Namespace};
     fn dump_namespace(nst:&NamespaceStack) {
         for i in nst {
             let mut s = String::new();

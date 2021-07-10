@@ -12,16 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    types.rs
-@brief   Types used throughout the reader files
+@file    names.rs
+@brief   Part of the markup library for names, name spaces, attributes and tags
  */
 
 //a Imports
-mod traits;
-mod error;
-mod event;
+mod ids;
+mod namespace;
+mod namespace_stack;
+mod name;
+mod attribute;
+mod tag;
 
 //a Exports
-pub use traits::Span;
-pub use error::{Error, Result};
-pub use event::{Event, EventType};
+pub use ids::{NSNameId, NSPrefixId, NSUriId, NSMap};
+pub use namespace::Namespace;
+pub use namespace_stack::NamespaceStack;
+pub use name::Name;
+pub use attribute::{Attribute, Attributes};
+pub use tag::Tag;

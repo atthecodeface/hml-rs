@@ -17,9 +17,9 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{NSNameId, NSPrefixId, NSUriId};
-use crate::NamespaceStack;
-use crate::{MarkupResult, MarkupError};
+use super::{NSNameId, NSPrefixId, NSUriId};
+use super::NamespaceStack;
+use crate::markup;
 
 //a Name
 //tp Name
@@ -48,9 +48,9 @@ impl Name {
     }
 
     //fp new_local
-    pub fn new_local(ns:&mut NamespaceStack, name:&str) -> MarkupResult<Self> {
+    pub fn new_local(ns:&mut NamespaceStack, name:&str) -> markup::Result<Self> {
         if name.is_empty() {
-            return MarkupError::empty_name()
+            return crate::markup::Error::empty_name()
         }
         let prefix = NSPrefixId::none();
         let uri    = NSUriId::none();
@@ -59,29 +59,29 @@ impl Name {
     }
 
     //fp new
-    pub fn new(ns:&mut NamespaceStack, prefix:&str, name:&str) -> MarkupResult<Self> {
+    pub fn new(ns:&mut NamespaceStack, prefix:&str, name:&str) -> crate::markup::Result<Self> {
         if name.is_empty() {
-            return MarkupError::empty_name()
+            return crate::markup::Error::empty_name()
         }
         if let Some(p_id) = ns.find_prefix_id(prefix) {
             if let Some(uri) = ns.find_mapping(p_id) {
                 let name   = ns.add_name(name);
                 Ok(Self { prefix:p_id, uri, name })
             } else {
-                MarkupError::unmapped_prefix(prefix)
+                crate::markup::Error::unmapped_prefix(prefix)
             }
         } else {
-            MarkupError::unmapped_prefix(prefix)
+            crate::markup::Error::unmapped_prefix(prefix)
         }
     }
 
     //fp from_str
-    pub fn from_str(ns:&mut NamespaceStack, s:&str) -> MarkupResult<Self> {
+    pub fn from_str(ns:&mut NamespaceStack, s:&str) -> crate::markup::Result<Self> {
         let mut it = s.split(':');
         match (it.next(), it.next(), it.next()) {
             (Some(prefix), Some(name), None) => Self::new(ns, prefix, name),
             (Some(name), None, None)         => Self::new_local(ns, name),
-            _ => MarkupError::bad_name(s),
+            _ => crate::markup::Error::bad_name(s),
         }
     }
 

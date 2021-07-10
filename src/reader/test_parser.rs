@@ -3,12 +3,12 @@
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
-    use crate::{Namespace, NamespaceStack, Tag, Name};
+    use crate::names::{Namespace, NamespaceStack, Tag, Name};
     use crate::reader::{Parser, Lexer, ReaderError};
     use crate::string::Reader as StringReader;
     use crate::string::Position as StringPosition;
     use crate::string::Error as StringError;
-    type Event = crate::Event<crate::reader::Span<StringPosition>>;
+    type Event = crate::markup::Event<crate::reader::Span<StringPosition>>;
     #[derive(Debug)]
     enum Expectation<'a> {
         StD(usize),

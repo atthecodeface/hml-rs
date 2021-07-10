@@ -17,7 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{MarkupResult, Tag, Name, Attributes, Event, NamespaceStack};
+use crate::names::{Tag, Name, Attributes, NamespaceStack};
+use crate::markup::Event;
 use crate::reader::{Reader, Position};
 use super::{Span, ReaderError};
 type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
@@ -52,7 +53,7 @@ pub struct CloseTag<P:Position, T:std::fmt::Debug> {
 
 //ip CloseTag
 impl <P:Position, T:std::fmt::Debug> CloseTag<P, T> {
-    pub fn new(span:Span<P>, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, extra:T) -> MarkupResult<Self> {
+    pub fn new(span:Span<P>, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, extra:T) -> crate::markup::Result<Self> {
         let name = Name::new(ns_stack, prefix, name)?;
         Ok ( Self { span, name, extra } )
     }

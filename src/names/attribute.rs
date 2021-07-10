@@ -17,10 +17,13 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{MarkupResult, Name, NamespaceStack};
+use super::{Name, NamespaceStack};
 
 //a Attribute
 //tp Attribute
+/// An [Attribute] has a [Name] and a [String] value.
+///
+/// They correspond to attributes in markup tags
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Attribute {
     /// Name and optional namespace
@@ -31,7 +34,9 @@ pub struct Attribute {
 }
 
 impl Attribute {
-    pub fn new(ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> MarkupResult<Self> {
+    //fp new
+    /// Create a new [Attribute] using the [NamespaceStack] to resolve the name
+    pub fn new(ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> crate::markup::Result<Self> {
         if ns_stack.uses_xmlns() {
             if prefix == "" && name == "xmlns" {
                 println!("Add ns '' to be {}",value);
@@ -46,8 +51,11 @@ impl Attribute {
         let name = Name::new(ns_stack, prefix, name)?;
         Ok(Self { name, value })
     }
+
+    //zz All done
 }
 
+//a Attributes
 //tp Attributes
 #[derive(Debug)]
 pub struct Attributes {
@@ -65,7 +73,7 @@ impl Attributes {
     pub fn is_empty(&self) -> bool {
         self.attributes.is_empty()
     }
-    pub fn add(&mut self, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> MarkupResult<()> {
+    pub fn add(&mut self, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> crate::markup::Result<()> {
         self.attributes.push(Attribute::new(ns_stack, prefix, name, value)?);
         Ok(())
     }
