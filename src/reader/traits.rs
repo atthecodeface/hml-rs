@@ -36,7 +36,7 @@ pub trait Reader  : std::fmt::Debug {
     type Error    : std::error::Error + 'static;
     fn next_char(&mut self) -> std::result::Result<Self::Char, Self::Error>;
     fn borrow_pos(&self) -> &Self::Position;
-    fn fmt_context(&self, f: &mut std::fmt::Formatter, start:&Self::Position, end:&Self::Position) -> std::fmt::Result ;
+    fn fmt_context(&self, f: &mut dyn std::fmt::Write, start:&Self::Position, end:&Self::Position) -> std::fmt::Result ;
 }
 
 

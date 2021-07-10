@@ -151,19 +151,26 @@ impl <'a> Reader<'a> {
 
     //fi fmt_line
     /// Output a single line of text to a formatter given a line number
-    fn fmt_line(&self, f: &mut std::fmt::Formatter, line_num:usize)  -> std::fmt::Result {
-        use std::fmt::Write;
+    fn fmt_line(&self, f:&mut dyn std::fmt::Write, line_num:usize)  -> std::fmt::Result {
         let ofs = self.line_starts[line_num-1];
         let bytes = &(self.s.as_bytes()[ofs..]);
         let s = {unsafe {std::str::from_utf8_unchecked(bytes) }};
         for c in s.chars() {
             if c == '\n' {
-                f.write_char(c)?;
-            } else {
                 break;
+            } else {
+                f.write_char(c)?;
             }
         }
         Ok(())
+    }
+
+    //fi line_length
+    /// Find line length
+    fn line_length(&self, line_num:usize)  -> usize {
+        let ofs1 = self.line_starts[line_num-1];
+        let ofs2 = self.line_starts[line_num];
+        ofs2 - ofs1
     }
 
     //zz All done
@@ -188,10 +195,14 @@ impl <'a> reader::Reader for Reader<'a> {
         &self.n
     }
 
-    fn fmt_context(&self, f: &mut std::fmt::Formatter, start:&Position, end:&Position) -> std::fmt::Result {
-        use std::fmt::Write;
-        if start.line_num == end.line_num {
-            let mut num_chars = end.char_num - start.char_num;
+    fn fmt_context(&self, f: &mut dyn std::fmt::Write, start:&Position, end:&Position) -> std::fmt::Result {
+        if start.line_num == end.line_num || (start.line_num+1 == end.line_num && end.char_num == 1){
+            let mut num_chars = 0;
+            if start.line_num == end.line_num {
+                end.char_num - start.char_num;
+            } else {
+                num_chars = self.line_length(start.line_num);
+            }
             if num_chars == 0 { num_chars = 1; }
             if start.line_num > 1 {
                 write!(f, "    |  ")?;
@@ -202,7 +213,7 @@ impl <'a> reader::Reader for Reader<'a> {
             self.fmt_line(f, start.line_num)?;
             write!(f, "\n")?;
             write!(f, "    |  ")?;
-            for _ in 1..start.char_num { f.write_char(' ')?; }
+            for _ in 1..(start.char_num-1) { f.write_char(' ')?; }
             for _ in 0..num_chars { f.write_char('^')?; }
             write!(f, "\n")?;
             write!(f, "    |  ")?;
