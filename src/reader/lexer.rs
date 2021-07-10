@@ -263,7 +263,7 @@ impl <R:Reader> Lexer<R> {
             } else if is_name_start(ch) {
                 return self.read_attribute(reader);
             }
-            return self.unexpected_character(reader,ch);
+            return self.unexpected_character(reader, ch);
         } else {
             Ok(Token::eof(Span::new_at(reader.borrow_pos())))
         }
@@ -277,6 +277,16 @@ impl <R:Reader> Lexer<R> {
     //mi unexpected_character
     fn unexpected_character<T> (&self, reader:&R, ch:char) -> Result<R, T> {
         ReaderError::unexpected_character(&self.token_start, reader.borrow_pos(), ch)
+    }
+
+    //mi unexpected_newline_in_string
+    fn unexpected_newline_in_string<T> (&self, reader:&R) -> Result<R, T> {
+        ReaderError::unexpected_newline_in_string(&self.token_start, reader.borrow_pos())
+    }
+
+    //mi expected_equals
+    fn expected_equals<T> (&self, reader:&R, ch:char) -> Result<R, T> {
+        ReaderError::expected_equals(&self.token_start, reader.borrow_pos(), ch)
     }
 
     //mi read_name - read a name, cursor should be pointing at a is_name_start character
@@ -300,6 +310,7 @@ impl <R:Reader> Lexer<R> {
                 }
             }
         }
+        self.token_start = *reader.borrow_pos();
         return Ok(s);
     }
 
@@ -429,7 +440,7 @@ impl <R:Reader> Lexer<R> {
             let mut new_ch = ch2;
             while new_ch != ch {
                 if is_newline(ch) {
-                    return self.unexpected_character(reader, ch);
+                    return self.unexpected_newline_in_string(reader);
                 }
                 result.push(new_ch);
                 new_ch = self.get_char_no_eof(reader)?;
@@ -470,7 +481,7 @@ impl <R:Reader> Lexer<R> {
         let (ns,name) = self.read_namespace_name(reader)?;
         let ch   = self.get_char_no_eof(reader)?;
         if ch != '=' {
-            return self.unexpected_character(reader, ch);
+            return self.expected_equals(reader, ch);
         }
         let value = self.read_string(reader)?;
         let span = span.end_at(reader.borrow_pos());

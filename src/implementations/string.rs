@@ -67,7 +67,7 @@ impl std::fmt::Display for Position {
     //mp fmt
     /// Format for humans
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}:{}", self.line_num, self.char_num)
+        write!(f, "line {} character {}", self.line_num, self.char_num)
     }
 }
 
