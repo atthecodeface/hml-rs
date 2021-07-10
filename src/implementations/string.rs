@@ -98,6 +98,38 @@ impl std::fmt::Display for Character {
     }
 }
 
+//a Error
+//tp Error
+#[derive(Debug)]
+pub struct Error ();
+
+//ip reader::Error for Error
+impl reader::Error for Error {
+    type Position = Position;
+    fn write_without_span(&self, _f:&mut dyn std::fmt::Write) -> std::fmt::Result {
+        Ok(())
+    }
+    fn borrow_span(&self) -> Option<&reader::Span<Position>> {
+        None
+    }
+}
+
+//ip std::error::Error for Error
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
+    }
+}
+
+//ip std::fmt::Display for Error
+impl std::fmt::Display for Error {
+    //mp fmt - format a `Error` for display
+    /// Display the `Error` in a human-readable form
+    fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
 //a Reader
 //tp Reader
 /// A markup Reader type that operates on strings
@@ -180,9 +212,9 @@ impl <'a> Reader<'a> {
 impl <'a> reader::Reader for Reader<'a> {
     type Position = Position;
     type Char     = Character;
-    type Error    = std::io::Error;
+    type Error    = Error;
 
-    fn next_char(&mut self) -> std::result::Result<Character, std::io::Error> {
+    fn next_char(&mut self) -> std::result::Result<Character, Self::Error> {
         match self.chars.next() {
             Some(ch) => {
                 self.n.move_by_char(ch);
@@ -197,12 +229,13 @@ impl <'a> reader::Reader for Reader<'a> {
 
     fn fmt_context(&self, f: &mut dyn std::fmt::Write, start:&Position, end:&Position) -> std::fmt::Result {
         if start.line_num == end.line_num || (start.line_num+1 == end.line_num && end.char_num == 1){
-            let mut num_chars = 0;
-            if start.line_num == end.line_num {
-                end.char_num - start.char_num;
-            } else {
-                num_chars = self.line_length(start.line_num);
-            }
+            let mut num_chars = {
+                if start.line_num == end.line_num {
+                    end.char_num - start.char_num
+                } else {
+                    self.line_length(start.line_num)
+                }
+            };
             if num_chars == 0 { num_chars = 1; }
             if start.line_num > 1 {
                 write!(f, "    |  ")?;

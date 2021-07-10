@@ -20,7 +20,7 @@ limitations under the License.
 use crate::{Event, NamespaceStack};
 use crate::reader::{Reader, Position};
 use super::{Token, TokenType, Span, OpenTag, CloseTag, StackElement};
-use super::{Error};
+use super::{ReaderError};
 type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
@@ -136,7 +136,7 @@ impl <R:Reader> Parser<R> {
             }
             Ok(None)
         } else { // tag with too much depth
-            Error::unexpected_tag_indent(*open_tag.span(), self.tag_depth+1)
+            ReaderError::unexpected_tag_indent(*open_tag.span(), self.tag_depth+1)
         }
     }
 
@@ -166,7 +166,7 @@ impl <R:Reader> Parser<R> {
                     let mut args = token.take_contents();
                     let prefix = args.pop_front().unwrap();
                     let name   = args.pop_front().unwrap();
-                    let close_tag = Error::of_markup_result(span, CloseTag::new(span, ns_stack, &prefix, &name, TagExtra::new(token.get_depth(), false)))?;
+                    let close_tag = ReaderError::of_markup_result(span, CloseTag::new(span, ns_stack, &prefix, &name, TagExtra::new(token.get_depth(), false)))?;
                     self.pending_close_tag = Some(close_tag);
                     Ok(None)
                 },
@@ -180,7 +180,7 @@ impl <R:Reader> Parser<R> {
                         self.tag_stack.last_mut().unwrap().add_attribute(span, ns_stack, &prefix, &name, value)?;
                         Ok(None)
                     } else {
-                        Error::unexpected_attribute(span, &prefix, &name)
+                        ReaderError::unexpected_attribute(span, &prefix, &name)
                     }
                 },
                 TokenType::Characters  => {
@@ -207,7 +207,7 @@ impl <R:Reader> Parser<R> {
                 let span = Span::new_at(&self.token_pos);
                 return Ok(Event::start_document(span, 100));
             } else if self.finished {
-                return Error::no_more_events();
+                return ReaderError::no_more_events();
             } else if self.end_emitted {
                 self.finished = true;
                 let span = Span::new_at(&self.token_pos);

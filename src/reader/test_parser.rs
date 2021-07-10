@@ -4,11 +4,11 @@
 #[allow(dead_code)]
 mod tests {
     use crate::{Namespace, NamespaceStack, Tag, Name};
-    use crate::reader::{Parser, Lexer};
-    use crate::reader::Error as ReaderError;
-    use crate::string::Reader;
-    use crate::string::Position;
-    type Event = crate::Event<crate::reader::Span<Position>>;
+    use crate::reader::{Parser, Lexer, ReaderError};
+    use crate::string::Reader as StringReader;
+    use crate::string::Position as StringPosition;
+    use crate::string::Error as StringError;
+    type Event = crate::Event<crate::reader::Span<StringPosition>>;
     #[derive(Debug)]
     enum Expectation<'a> {
         StD(usize),
@@ -58,7 +58,7 @@ mod tests {
                 false
             }
         }
-        fn check_expectation(&mut self, ns_stack:&NamespaceStack, t:Result<Event,ReaderError<Position, std::io::Error>>) -> Result<(), String> {
+        fn check_expectation(&mut self, ns_stack:&NamespaceStack, t:Result<Event, ReaderError<StringPosition, StringError>>) -> Result<(), String> {
             self.index += 1;
             if self.index > self.expectations.len() {
                 return Err(format!("Ran out of expectations, got {:?}",t));
@@ -121,9 +121,9 @@ mod tests {
         let mut namespace = Namespace::new(true);
         let mut namespace_stack = NamespaceStack::new(&mut namespace);
         namespace_stack.add_null_ns();
-        let mut reader = Reader::new(s);
+        let mut reader = StringReader::new(s);
         let mut lexer  = Lexer::new();
-        let mut parser : Parser::<Reader>  = Parser::new();
+        let mut parser : Parser::<StringReader>  = Parser::new();
         let mut errors = Vec::new();
         loop {
             let t = parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader));

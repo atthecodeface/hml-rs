@@ -8,12 +8,11 @@ pub use markup::{NSNameId, NSPrefixId, NSUriId, NSMap};
 pub use markup::{Namespace, NamespaceStack, Name, Attribute, Attributes, Tag};
 pub use markup::{Event, EventType};
 
-// Expose reader::{Position, Character, Reader, Lexer, Parser, Span, Error, Result}
+// Expose reader::{Position, Character, Error, Reader, Lexer, Parser, Span, ReaderError, Result}
 pub mod reader;
 
 mod implementations;
 pub use implementations::string;
-// pub mod implementations::file;
 
 /*
 mod types;

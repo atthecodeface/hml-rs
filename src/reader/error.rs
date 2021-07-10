@@ -18,22 +18,22 @@ limitations under the License.
 
 //a Imports
 use crate::{MarkupError, MarkupResult};
-use super::{Reader, Position, Span};
+use super::{Reader, Position, Span, Error};
 
 //a Result
 //tp Result
 /// The [Result] type is a result with an error type of [crate::Error]
 // pub type Result<T, P:Position, E:std::error::Error +'static> = std::result::Result<T, Error<P, E>>;
-pub type Result<T, P, E> = std::result::Result<T, Error<P, E>>;
+pub type Result<T, P, E> = std::result::Result<T, ReaderError<P, E>>;
 
-//a Error
-//tp Error
-/// [Error] represents an error from the UTF-8 character reader,
+//a ReaderError
+//tp ReaderError
+/// [ReaderError] represents an error from the UTF-8 character reader,
 /// either an IO error from the reader or a malformed UTF-8 encoded
 /// set of bytes.
 #[derive(Debug)]
-pub enum Error<P, E>
-where P:Position, E:std::error::Error +'static
+pub enum ReaderError<P, E>
+where P:Position, E:Error<Position = P>
 {
     /// A UTF8 error
     Utf8Error(P, E),
@@ -46,9 +46,9 @@ where P:Position, E:std::error::Error +'static
     UnexpectedEOF(Span<P>),
 }
 
-//ip Error
-impl <P, E> Error<P, E>
-where P:Position, E:std::error::Error +'static
+//ip ReaderError
+impl <P, E> ReaderError<P, E>
+where P:Position, E:Error<Position = P>
 {
     pub fn of_reader<T, R>(reader:&R, reader_error:E) -> Result<T, P, E>
     where R:Reader<Position = P, Error = E>
@@ -85,28 +85,28 @@ where P:Position, E:std::error::Error +'static
     }
 }
 
-//ip std::fmt::Display for Error
-impl <P, E> std::fmt::Display for Error<P, E>
-where P:Position, E:std::error::Error +'static
+//ip std::fmt::Display for ReaderError
+impl <P, E> std::fmt::Display for ReaderError<P, E>
+where P:Position, E:Error<Position = P>
 {
     //mp fmt - format a `Error` for display
     /// Display the `Error` in a human-readable form
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Error::Utf8Error(posn, err) => write!(f, "{}: {}", posn, err),
-            Error::UnexpectedTagIndent(span, depth) => write!(f, "{}: Expected a tag indent of at most {}", span, depth),
+            Self::Utf8Error(posn, err) => write!(f, "{}: {}", posn, err),
+            Self::UnexpectedTagIndent(span, depth) => write!(f, "{}: Expected a tag indent of at most {}", span, depth),
             _ => Ok(()),
         }
     }
 }
 
-//ip std::error::Error for Error
-impl <P, E> std::error::Error for Error<P, E>
-where P:Position, E:std::error::Error +'static
+//ip std::error::Error for ReaderError
+impl <P, E> std::error::Error for ReaderError<P, E>
+where P:Position, E:Error<Position = P>
 {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Error::Utf8Error(_,e) => Some(e),
+            Self::Utf8Error(_,e) => Some(e),
             _ => None,
         }
     }

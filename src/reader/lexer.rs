@@ -44,7 +44,7 @@ limitations under the License.
 
 //a Imports
 use crate::reader::{Reader, Position, Character};
-use super::{Error, Span};
+use super::{ReaderError, Span};
 use super::{Token};
 type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
@@ -135,7 +135,7 @@ impl <R:Reader> Lexer<R> {
                         self.read_ahead = Some(ch);
                         Ok(ch)
                     }
-                    Err(e) => Error::of_reader(reader, e)
+                    Err(e) => ReaderError::of_reader(reader, e)
                 }
             },
         }
@@ -165,7 +165,7 @@ impl <R:Reader> Lexer<R> {
                     Ok(ch) => {
                         Ok(ch)
                     }
-                    Err(e) => Error::of_reader(reader, e)
+                    Err(e) => ReaderError::of_reader(reader, e)
                 }
             }
         }
@@ -271,12 +271,12 @@ impl <R:Reader> Lexer<R> {
 
     //mi unexpected_eof
     fn unexpected_eof<T> (&self, reader:&R) -> Result<R, T> {
-        Error::unexpected_eof(&self.token_start, reader.borrow_pos())
+        ReaderError::unexpected_eof(&self.token_start, reader.borrow_pos())
     }
 
     //mi unexpected_character
     fn unexpected_character<T> (&self, reader:&R, ch:char) -> Result<R, T> {
-        Error::unexpected_character(&self.token_start, reader.borrow_pos(), ch)
+        ReaderError::unexpected_character(&self.token_start, reader.borrow_pos(), ch)
     }
 
     //mi read_name - read a name, cursor should be pointing at a is_name_start character

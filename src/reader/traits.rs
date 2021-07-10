@@ -16,6 +16,8 @@ limitations under the License.
 @brief   Reader traits for the markup library
  */
 
+use crate::reader::Span;
+
 //a Position trait
 //tt Position
 pub trait Position : Clone + Copy + std::fmt::Debug + std::fmt::Display + 'static {
@@ -29,11 +31,20 @@ pub trait Character : Clone + Copy + std::fmt::Debug + std::fmt::Display + 'stat
     fn as_char(&self)    -> Option<char>;
 }
 
+//tt Error
+pub trait Error : std::error::Error + 'static {
+    type Position : Position;
+    /// Write the error without the span
+    fn write_without_span(&self, f: &mut dyn std::fmt::Write) -> std::fmt::Result;
+    /// Borrow a span if it has one
+    fn borrow_span(&self) -> Option<&Span<Self::Position>>;
+}
+
 //tt Reader
 pub trait Reader  : std::fmt::Debug {
     type Position : Position;
     type Char     : Character;
-    type Error    : std::error::Error + 'static;
+    type Error    : Error<Position = Self::Position>;
     fn next_char(&mut self) -> std::result::Result<Self::Char, Self::Error>;
     fn borrow_pos(&self) -> &Self::Position;
     fn fmt_context(&self, f: &mut dyn std::fmt::Write, start:&Self::Position, end:&Self::Position) -> std::fmt::Result ;

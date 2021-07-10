@@ -14,9 +14,9 @@ mod test_parser;
 pub(self) use token::{Token, TokenType};
 pub(self) use builder::{OpenTag, CloseTag, StackElement};
 
-pub use error::{Error, Result};
+pub use error::{ReaderError, Result};
 pub use lexer::Lexer;
 pub use parser::Parser;
 pub use span::Span;
-pub use traits::{Position, Character, Reader};
+pub use traits::{Position, Character, Error, Reader};
 

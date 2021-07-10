@@ -19,7 +19,7 @@ limitations under the License.
 //a Imports
 use crate::{MarkupResult, Tag, Name, Attributes, Event, NamespaceStack};
 use crate::reader::{Reader, Position};
-use super::{Span, Error};
+use super::{Span, ReaderError};
 type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
@@ -102,11 +102,11 @@ impl <R:Reader, T:std::fmt::Debug> StackElement<R, T> {
         }
     }
     pub fn add_attribute(&mut self, span:Span<R::Position>, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> Result<R,()> {
-        Error::of_markup_result(span, self.attributes.add(ns_stack, prefix, name, value))
+        ReaderError::of_markup_result(span, self.attributes.add(ns_stack, prefix, name, value))
     }
     pub fn as_start_element(&mut self, ns_stack:&mut NamespaceStack) -> Result<R, Event<Span<R::Position>>> {
         let attributes = std::mem::replace(&mut self.attributes, Attributes::new());
-        let tag = Error::of_markup_result(self.open_tag.span, Tag::new(ns_stack, &self.open_tag.prefix, &self.open_tag.name, attributes))?;
+        let tag = ReaderError::of_markup_result(self.open_tag.span, Tag::new(ns_stack, &self.open_tag.prefix, &self.open_tag.name, attributes))?;
         self.tag_name = tag.name;
         Ok(Event::start_element( self.open_tag.span, tag ))
     }
