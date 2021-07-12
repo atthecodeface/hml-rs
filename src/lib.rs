@@ -1,12 +1,12 @@
+
+pub mod escape;
+
+// Expose names::{NSNameId, NSPrefixId, NSUriId, NSMap};
+//        names::{Namespace, NamespaceStack, Name, Attribute, Attributes, Tag};
 pub mod names;
+
+// Expose markup::Span, Error, Result, Event, EventType
 pub mod markup;
-
-// pub use names::{NSNameId, NSPrefixId, NSUriId, NSMap};
-// pub use names::{Namespace, NamespaceStack, Name, Attribute, Attributes, Tag};
-
-// pub use markup::Span as StreamSpan;
-// pub use markup::{MarkupError, MarkupResult};
-// pub use markup::{Event, EventType};
 
 // Expose reader::{Position, Character, Error, Reader, Lexer, Parser, Span, ReaderError, Result}
 pub mod reader;
