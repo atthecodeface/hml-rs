@@ -68,27 +68,27 @@ pub fn escape(s:&str, char_set:usize) -> Option<String> {
 }
 
 pub struct Entities<'a> {
-    map : HashMap::<&'a [u8], &'a [u8]>,
+    map : HashMap::<&'a [u8], &'a str>,
 }
 impl <'a> Entities<'a> {
     pub fn new() -> Self {
         Self { map : HashMap::new() }
     }
     pub fn xml() -> Self {
-        let mut map : HashMap::<&[u8], &[u8]> = HashMap::new();
-        map.insert(b"amp", b"&");
-        map.insert(b"AMP", b"&");
-        map.insert(b"lt",  b"<");
-        map.insert(b"LT",  b"<");
-        map.insert(b"gt",  b">");
-        map.insert(b"GT",  b">");
-        map.insert(b"apos",  b"'");
-        map.insert(b"APOS",  b"'");
-        map.insert(b"quot",  b"\"");
-        map.insert(b"QUOT",  b"\"");
+        let mut map : HashMap::<&[u8], &str> = HashMap::new();
+        map.insert(b"amp",   "&");
+        map.insert(b"AMP",   "&");
+        map.insert(b"lt",    "<");
+        map.insert(b"LT",    "<");
+        map.insert(b"gt",    ">");
+        map.insert(b"GT",    ">");
+        map.insert(b"apos",  "'");
+        map.insert(b"APOS",  "'");
+        map.insert(b"quot",  "\"");
+        map.insert(b"QUOT",  "\"");
         Self { map }
     }
-    fn find_span(&self, inc_map:bool, bytes:&[u8], mut i:usize, n:usize) -> (usize, Option<&[u8]>, Option<char>) {
+    fn find_span(&self, inc_map:bool, bytes:&[u8], mut i:usize, n:usize) -> (usize, Option<&str>, Option<char>) {
         if bytes[i] == b'&' {
             i += 1;
             let start = i;
@@ -149,16 +149,16 @@ impl <'a> Entities<'a> {
             (i, None, None)
         }
     }
-    fn replace_entities_required(&self, inc_map:bool, bytes:&[u8], c:&[u8], d:usize, mut i:usize, n:usize) -> Option<String> {
+    fn replace_entities_required(&self, inc_map:bool, bytes:&[u8], c:&str, d:usize, mut i:usize, n:usize) -> Option<String> {
         let mut r = Vec::with_capacity(n);
         if d > 0 {
             r.extend_from_slice(&bytes[0..d]);
         }
-        r.extend_from_slice(c);
+        r.extend_from_slice(c.as_bytes());
         while i < n {
             let (next_i, opt_a, opt_b) = self.find_span(inc_map, bytes, i, n);
             if let Some(c) = opt_a {
-                r.extend_from_slice(c);
+                r.extend_from_slice(c.as_bytes());
             } else if let Some(c) = opt_b {
                 let mut buf = [0; 4];
                 let buf = c.encode_utf8(&mut buf).as_bytes();
@@ -203,10 +203,7 @@ impl <'a> Entities<'a> {
     /// numerically (&#38;) or with a general entity
     /// (&amp;).
     ///
-    /// Hence this methods needs a way to turn off character entity parsing too.
-    ///
-    /// Worse, with
-    pub fn replace_entities(&self, s:&str, inc_map:bool) -> Option<String> {
+    pub fn replace_entities(&self, inc_map:bool, s:&str) -> Option<String> {
         // Note that s.len is the length in bytes, not in utf8 characters
         let n = s.len();
         let bytes = s.as_bytes();
@@ -217,7 +214,7 @@ impl <'a> Entities<'a> {
                 return self.replace_entities_required(inc_map, bytes, c, i, next_i, n);
             } else if let Some(c) = opt_b {
                 let mut buf = [0; 4];
-                let buf = c.encode_utf8(&mut buf).as_bytes();
+                let buf = c.encode_utf8(&mut buf);
                 return self.replace_entities_required(inc_map, bytes, buf, i, next_i, n);
             }
             i = next_i;
