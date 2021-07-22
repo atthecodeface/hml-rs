@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use std::collections::VecDeque;
-use super::{Position, Span};
+use crate::reader::{Position, Span};
 
 //a Token
 //tp Token

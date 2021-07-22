@@ -16,7 +16,7 @@ limitations under the License.
 @brief   Reader traits for the markup library
  */
 
-use crate::reader::Span;
+use super::Span;
 
 //a Position trait
 //tt Position

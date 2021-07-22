@@ -19,10 +19,9 @@ limitations under the License.
 //a Imports
 use crate::names::{NamespaceStack};
 use crate::markup::{Event};
-use crate::reader::{Reader, Position};
-use super::{Token, TokenType, Span, OpenTag, CloseTag, StackElement};
-use super::{ReaderError};
-type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
+use crate::reader::{Reader, Position, Span, ReaderError};
+use super::{Token, TokenType, OpenTag, CloseTag, StackElement};
+type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
 //ti TagExtra

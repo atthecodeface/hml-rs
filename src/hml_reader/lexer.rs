@@ -44,9 +44,9 @@ limitations under the License.
 
 //a Imports
 use crate::reader::{Reader, Position, Character};
-use super::{ReaderError, Span};
+use crate::reader::{ReaderError, Span};
 use super::{Token};
-type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
+type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Utils
 //fp is_quote

@@ -20,8 +20,9 @@ limitations under the License.
 use crate::names::{Tag, Name, Attributes, NamespaceStack};
 use crate::markup::Event;
 use crate::reader::{Reader, Position};
-use super::{Span, ReaderError};
-type Result<R, T> = super::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
+use crate::reader::{Span, ReaderError};
+
+type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
 //tp OpenTag

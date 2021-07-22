@@ -5,7 +5,7 @@
 mod tests {
     // use super::super::types::*;
     use crate::string::Reader;
-    use crate::reader::Lexer;
+    use crate::hml_reader::Lexer;
     #[test]
     fn test_blah() {
         let buf = "; This is a comment\n   ; with more comment\n #banana #fred:tob{ r='2' \"\"\"Stuff \"\"  and more \"\"\"";

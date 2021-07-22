@@ -4,7 +4,8 @@
 #[allow(dead_code)]
 mod tests {
     use crate::names::{Namespace, NamespaceStack, Tag, Name};
-    use crate::reader::{Parser, Lexer, ReaderError};
+    use crate::reader::{ReaderError};
+    use crate::hml_reader::{Parser, Lexer};
     use crate::string::Reader as StringReader;
     use crate::string::Position as StringPosition;
     use crate::string::Error as StringError;
