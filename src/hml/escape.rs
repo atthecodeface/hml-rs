@@ -68,11 +68,29 @@ impl <'a> AsRef<str> for Escapable<'a> {
 }
 
 impl <'a> Escapable<'a> {
+    //fp new
+    /// Create a new escaped string; this borrows the original string,
+    /// and has an escaped version thereof
+    ///
+    /// If the original string contains no escaped characters then
+    /// `escaped` will be None
+    ///
+    /// If the original string contains legal escape sequences then
+    /// `escaped` will be a new string that has those resolved
+    ///
+    /// If the original string has illegal escapes then an error is returned
     pub fn new(s:&'a str) -> Result<Self> {
         let escaped = Self::opt_unescape(s)?;
         Ok( Self { s, escaped } )
     }
 
+    //fp unescape
+    /// Unescape a string, with the first `i` characters known to be safe
+    ///
+    /// Return Ok(Some(new string)) if the input is legal
+    ///
+    /// If an escape is illegal (such as a \u{} of an out-of-range
+    /// unicode point) then return an error.
     fn unescape(bytes:&[u8], mut i:usize, n:usize) -> Result<Option<String>> {
         use EscapeState::*;
         let mut r = Vec::with_capacity(n);
@@ -161,6 +179,15 @@ impl <'a> Escapable<'a> {
             Ok(Some(string))
         }
     }
+
+    //fp opt_unescape
+    /// Unescape a string if required; if it has no escaped characters then return None
+    ///
+    /// Return Ok(Some(new string)) if the input has escaped
+    /// characters, with the new string having those escapes resolved.
+    ///
+    /// If an escape is illegal (such as a \u{} of an out-of-range
+    /// unicode point) then return an error.
     fn opt_unescape(s:&str) -> Result<Option<String>> {
         let n = s.len();
         let bytes = s.as_bytes();

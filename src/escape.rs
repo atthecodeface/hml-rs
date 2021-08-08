@@ -88,6 +88,27 @@ impl <'a> Entities<'a> {
         map.insert(b"QUOT",  "\"");
         Self { map }
     }
+    //fp find_span
+    /// Find the span starting with the given index `i` that is either
+    /// from an entity (starting with '&' ending with ';') - which is
+    /// then unmapped if possible, or the span until the end of string
+    /// or the next entity.
+    ///
+    /// The return value is the index of the end of the span, and a
+    /// possible replacement string or replacement character - if the
+    /// span is an entity it can be mapped to either of these (or an
+    /// unknown/bad entity is just a simple span).
+    ///
+    /// Hence a return value of (n, Some(r), None) indicates that from
+    /// `i` to `n` (inclusive to exclusive) is an entity that can be
+    /// replaced with the string `r`.
+    ///
+    /// A return value of (n, None, Some(c)) indicates that from
+    /// `i` to `n` (inclusive to exclusive) is an entity that can be
+    /// replaced with the character `c`.
+    ///
+    /// The other possible return value is (n, None, None), indicating
+    /// that the span from `i` to `n` contains no entity references
     fn find_span(&self, inc_map:bool, bytes:&[u8], mut i:usize, n:usize) -> (usize, Option<&str>, Option<char>) {
         if bytes[i] == b'&' {
             i += 1;
@@ -149,6 +170,16 @@ impl <'a> Entities<'a> {
             (i, None, None)
         }
     }
+
+    //fp replace_entities
+    /// Replace general entity references and &#..; characters, using the map.
+    ///
+    /// The buffer `bytes` is the source and it has length `n`.
+    ///
+    /// The buffer at `bytes` has the span from 0..d as a valid UTF8 string;
+    /// at `d` there is an entity that ends at `i` which should be replaced with `c`.
+    ///
+    /// From `i` there may be more entities that require replacement.
     fn replace_entities_required(&self, inc_map:bool, bytes:&[u8], c:&str, d:usize, mut i:usize, n:usize) -> Option<String> {
         let mut r = Vec::with_capacity(n);
         if d > 0 {
@@ -171,8 +202,11 @@ impl <'a> Entities<'a> {
         let string = unsafe { String::from_utf8_unchecked(r) };
         Some(string)
     }
+    
     //fp replace_entities
     /// Replace general entity references and &#..; characters, using the map.
+    ///
+    /// Return None if the string has no replacements required; else Some(new string).
     ///
     /// The replacements that are used should *also* be replaced if this is expanding a general entity use.
     ///
@@ -209,14 +243,22 @@ impl <'a> Entities<'a> {
         let bytes = s.as_bytes();
         let mut i = 0;
         while i < n {
+            // Find next span
+            //
             let (next_i, opt_a, opt_b) = self.find_span(inc_map, bytes, i, n);
             if let Some(c) = opt_a {
+                // The return from find_span was(n, Some(c:&str), None): the span up to `n` is
+                // an entity reference to be replaced with `c`
                 return self.replace_entities_required(inc_map, bytes, c, i, next_i, n);
             } else if let Some(c) = opt_b {
+                // The return from find_span was(n, None, Some(c:char)): the span up to `n` is
+                // an entity reference to be replaced with `c`
                 let mut buf = [0; 4];
                 let buf = c.encode_utf8(&mut buf);
                 return self.replace_entities_required(inc_map, bytes, buf, i, next_i, n);
             }
+            // The return from find_span was(n, None, None): the span up to `n` has
+            // no entity references
             i = next_i;
         }
         None

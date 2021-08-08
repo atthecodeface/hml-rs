@@ -23,11 +23,23 @@ limitations under the License.
 
 # Markup library
 
-This library provides for markup language stream reading and writing, using for example XML. It also provides an alternative form, HML (human-readable markup language). All supported markup languages provide for structured documents whose content is Unicode (and therefore can be represented as Rust [String]s).
+This library provides for markup language stream reading and writing,
+using for example XML. It also provides an alternative form, HML
+(human-readable markup language). All supported markup languages
+provide for structured documents whose content is Unicode (and
+therefore can be represented as Rust [String]s).
 
-It provides a simple name and namespace system, which utilizes vectors of strings that may be element names, attribute names, or URIs. A markup namespaced-name can then be referred to by internal identifiers, rather than pointers to strings.
+It provides a simple name and namespace system, which utilizes vectors
+of strings that may be element names, attribute names, or URIs. A
+markup namespaced-name can then be referred to by internal
+identifiers, rather than pointers to strings.
 
-Using the namespace system, the library provides for markup handling, particularly streams of markup events. A document can be parsed from a stream, with a markup reader producing the required stream of markup events; the events themselves do not contain string references for the element names, namespaces, and attribute names; rather they use the namespace identifiers.
+Using the namespace system, the library provides for markup handling,
+particularly streams of markup events. A document can be parsed from a
+stream, with a markup reader producing the required stream of markup
+events; the events themselves do not contain string references for the
+element names, namespaces, and attribute names; rather they use the
+namespace identifiers.
 
 ## HML - Human Markup Language
 
@@ -205,7 +217,7 @@ Escapes supported are as per Rust:
 !*/
 
 pub mod escape;
-pub mod rust_escape;
+pub mod hml;
 
 // Expose names::{NSNameId, NSPrefixId, NSUriId, NSMap};
 //        names::{Namespace, NamespaceStack, Name, Attribute, Attributes, Tag};
