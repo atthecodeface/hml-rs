@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use crate::names::{NamespaceStack};
-use crate::markup::{Event};
+use crate::markup::{Event, ContentType};
 use crate::reader::{Reader, Position, Span, ReaderError};
 use super::{Token, TokenType, OpenTag, CloseTag, StackElement};
 type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
@@ -186,7 +186,7 @@ impl <R:Reader> Parser<R> {
                 TokenType::Characters  => {
                     let mut data = token.take_contents();
                     let data = data.pop_front().unwrap();
-                    Ok(Some(Event::content(*token.get_span(), data)))
+                    Ok(Some(Event::content(*token.get_span(), ContentType::Interpretable, data)))
                 },
                 TokenType::EndOfFile  => {
                     self.pending_eof = true;

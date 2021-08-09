@@ -17,8 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use crate::markup;
-use super::{Position};
+use crate::reader::Position;
 
 //a Span
 //tp Span
@@ -33,20 +32,34 @@ pub struct Span<P:Position> {
     end   : P,
 }
 
+//ip Span
 impl <P:Position> Span<P> {
+    //fp new_at
+    /// Create a new span starting and ending at a position
     pub fn new_at(posn:&P) -> Self {
         Self { start:*posn, end:*posn }
     }
+
+    //cp end_at
+    /// Extend self to an end position
     pub fn end_at(mut self, posn:&P) -> Self {
         self.end = *posn;
         self
     }
+
+    //mp start
+    /// Borrow the start position of the span
     pub fn start(&self) -> &P {
         &self.start
     }
+
+    //mp end
+    /// Borrow the end position of the span
     pub fn end(&self) -> &P {
         &self.end
     }
+
+    //zz All done
 }
 
 //ip Display for Span

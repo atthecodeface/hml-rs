@@ -24,4 +24,4 @@ mod event;
 //a Exports
 pub use traits::Span;
 pub use error::{Error, Result};
-pub use event::{Event, EventType};
+pub use event::{Event, EventType, ContentType};

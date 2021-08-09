@@ -41,7 +41,7 @@ use crate::markup::Span;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ContentType {
     /// Must change to Raw
-    CData,
+    Raw,
     /// Content can be intepreted (escapes/entitied converted to characters/strings)
     Interpretable,
     /// The content is whitespace that contains only tab, space or newlines (and hence need not be interpreted)
@@ -122,29 +122,57 @@ pub enum Event<F:Span> {
 //ip Event
 impl <F:Span> Event<F> {
     //fp start_document
+    /// Create a StartDocument event
     pub fn start_document(span:F, version:usize) -> Self {
         Self::StartDocument { span, version }
     }
+
     //fp end_document
+    /// Create an EndDocument event
     pub fn end_document(span:F) -> Self {
         Self::EndDocument { span }
     }
+
     //fp start_element
+    /// Create a StartElement event with a given [Tag]
     pub fn start_element(span:F, tag:Tag) -> Self {
         Self::StartElement { span, tag }
     }
+    
     //fp end_element
+    /// Create an EndElement event with a given [Name]
     pub fn end_element(span:F, name:Name) -> Self {
         Self::EndElement { span, name }
     }
+
     //fp comment
+    /// Create an event of a vec of comment strings
     pub fn comment(span:F, data:Vec<String>) -> Self {
         Self::Comment { span, data }
     }
+    
     //fp content
-    pub fn content(span:F, data:String) -> Self {
-        let ctype = ContentType::CData;
+    /// Create an event of content of the given type
+    pub fn content(span:F, ctype:ContentType, data:String) -> Self {
         Self::Content { span, ctype, data }
+    }
+
+    //fp content_raw
+    /// Create an event of raw content
+    pub fn content_raw(span:F, data:String) -> Self {
+        Self::content(span, ContentType::Raw, data )
+    }
+
+    //fp content_int
+    /// Create an event of interpretable content
+    pub fn content_int(span:F, data:String) -> Self {
+        Self::content(span, ContentType::Interpretable, data )
+    }
+
+    //fp content_ws
+    /// Create an event of whitespace content
+    pub fn content_ws(span:F, data:String) -> Self {
+        Self::content(span, ContentType::Whitespace, data )
     }
 
     //mp get_type

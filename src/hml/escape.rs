@@ -1,25 +1,53 @@
+/*a Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    esacpe.rs
+@brief   Interpret HML escapable strings
+ */
+
+//a Imports
 use std::convert::TryFrom;
 
+//a Error type and result
+//tp Error
+/// Error in an escape sequence
 #[derive(Debug)]
 pub enum Error {
+    /// An illegal escape sequence
     BadEscape(String),
+    /// A bad hex digit
     BadHexDigit(String),
+    /// An illegal hex esacape
     BadHexEscape(String),
+    /// An illegal unicode specified in an escape sequence
     BadUnicode(String),
+    /// End of string during an escape sequence
     EndOfStringInEscape(String),
 }
 
+//ip Error
 impl Error {
-    fn bad_escape<T>(reason:&str, byte:u8, bytes:&[u8], offset:usize) -> Result<T> {
+    fn bad_escape<T>(reason:&str, byte:u8, _bytes:&[u8], _offset:usize) -> Result<T> {
         Err(Self::BadEscape(format!("{} '{}'", reason, byte)))
     }
-    fn bad_hex_digit<T>(reason:&str, byte:u8) -> Result<T> {
+    fn bad_hex_digit<T>(reason:&str, _byte:u8) -> Result<T> {
         Err(Self::BadHexDigit(format!("{}", reason)))
     }
-    fn bad_hex_escape<T>(reason:&str, bytes:&[u8], offset:usize) -> Result<T> {
+    fn bad_hex_escape<T>(reason:&str, _bytes:&[u8], _offset:usize) -> Result<T> {
         Err(Self::BadHexEscape(format!("{}",reason)))
     }
-    fn bad_unicode<T>(reason:&str, bytes:&[u8], offset:usize) -> Result<T> {
+    fn bad_unicode<T>(reason:&str, _bytes:&[u8], _offset:usize) -> Result<T> {
         Err(Self::BadUnicode(format!("{}",reason)))
     }
     fn end_of_string_in_escape<T>(bytes:&[u8]) -> Result<T> {
@@ -27,8 +55,12 @@ impl Error {
     }
 }
 
-type Result<T> = std::result::Result<T, Error>;
+//tp Result
+/// Result from parsing an escaped string
+pub type Result<T> = std::result::Result<T, Error>;
 
+//a Useful functions
+//fp hex_of_byte
 fn hex_of_byte(reason:&str, b:u8) -> Result<u32> {
     let value = {
         if b >= b'0' && b <= b'9' {
