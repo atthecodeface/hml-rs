@@ -23,6 +23,12 @@ use crate::markup;
 
 //a Name
 //tp Name
+/// A name within a markup stream consisting of ids for a prefix and
+/// the actual name; the prefix can be the none id.
+///
+/// If the prefix is not none, then the URI id will correspond to the
+/// id of a URI that the prefix has been declared to map to (given the
+/// namespace stack)
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Name {
     /// A name prefix, e.g. `xsi` in `xsi:string`.
@@ -38,6 +44,7 @@ pub struct Name {
 //ip Name
 impl Name {
     //fp none
+    /// Create a `None` [Name]
     pub fn none() -> Self {
         let prefix = NSPrefixId::none();
         let uri = NSUriId::none();
@@ -46,6 +53,7 @@ impl Name {
     }
 
     //fp new_local
+    /// Create a [Name] from a name with an prefix of None
     pub fn new_local(ns: &mut NamespaceStack, name: &str) -> markup::Result<Self> {
         if name.is_empty() {
             return crate::markup::Error::empty_name();
@@ -57,6 +65,11 @@ impl Name {
     }
 
     //fp new
+    /// Create a [Name] fom a prefix string and a name
+    ///
+    /// If the name is illegal (empty) or the prefix is not mapped (an
+    /// empty prefix can be mapped in the namespace by default, so an
+    /// empty prefix is not illegal per s) then an error is returned.
     pub fn new(ns: &mut NamespaceStack, prefix: &str, name: &str) -> crate::markup::Result<Self> {
         if name.is_empty() {
             return crate::markup::Error::empty_name();
@@ -78,6 +91,12 @@ impl Name {
     }
 
     //fp from_str
+    /// Create a [Name] fom a string given the current
+    /// [NamespaceStack], returning an error if the namespace is
+    /// unmapped or the input string is malformed
+    ///
+    /// A well-formed string is either <ns>:<name> or <name>; two ':'
+    /// characters are illegal
     pub fn from_str(ns: &mut NamespaceStack, s: &str) -> crate::markup::Result<Self> {
         let mut it = s.split(':');
         match (it.next(), it.next(), it.next()) {
@@ -88,6 +107,7 @@ impl Name {
     }
 
     //fp to_string
+    /// Create a new `String` of the [Name]
     pub fn to_string(&self, ns: &NamespaceStack) -> String {
         if self.prefix.is_none() {
             format!("{}", ns.borrow_name(self.name))

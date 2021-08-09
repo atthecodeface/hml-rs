@@ -21,6 +21,8 @@ use super::{Attributes, Name, NamespaceStack};
 
 //a Tag
 //tp Tag
+/// A markup tag consists of a name (possibly within a namespace) and
+/// a list of attributes (which are name/value pairs)
 #[derive(Debug)]
 pub struct Tag {
     /// Name with prefix *and URI from namespace stack*
@@ -34,6 +36,9 @@ pub struct Tag {
 
 //ip Tag
 impl Tag {
+    //fp new
+    /// Create a new [Tag] from a namespace and name strings, and an
+    /// attribute list
     pub fn new(
         ns_stack: &mut NamespaceStack,
         ns: &str,

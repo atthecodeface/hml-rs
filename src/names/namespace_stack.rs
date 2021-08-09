@@ -145,6 +145,8 @@ pub struct NamespaceStack<'a> {
 
 impl<'a> NamespaceStack<'a> {
     //fp new
+    /// Create a new [NamespaceStack], mutably borrowing the
+    /// [Namespace] for its lifetime
     pub fn new(namespaces: &'a mut Namespace) -> Self {
         let mut frames = Vec::new();
         frames.push(NamespaceStackFrame::new());
@@ -158,6 +160,8 @@ impl<'a> NamespaceStack<'a> {
     }
 
     //mp uses_xmlns
+    /// Return true if the [Namespace] was specified to use the XML
+    /// namespace (at creation)
     pub fn uses_xmlns(&self) -> bool {
         self.namespaces.uses_xmlns()
     }
@@ -165,7 +169,7 @@ impl<'a> NamespaceStack<'a> {
     //mp add_null_ns
     /// Add the null namespace
     ///
-    /// This is normally done at the creation of a NamespaceStack
+    /// This is normally done at the creation of a [NamespaceStack]
     pub fn add_null_ns(&mut self) {
         self.add_ns("", "");
     }
@@ -173,7 +177,7 @@ impl<'a> NamespaceStack<'a> {
     //mp add_default_xmls
     /// Add the default XML namespaces to the stack frame
     ///
-    /// This is normally done at the creation of a NamespaceStack
+    /// This is normally done at the creation of a [NamespaceStack]
     pub fn add_default_xmls(&mut self) {
         self.add_null_ns();
         self.add_ns("xmlns", "http://www.w3.org/2000/xmlns/");
@@ -181,27 +185,33 @@ impl<'a> NamespaceStack<'a> {
     }
 
     //mp push_frame
+    /// Push a new stack frame on to the [NamespaceStack]
     pub fn push_frame(&mut self) {
         self.frames.push(NamespaceStackFrame::new());
     }
 
     //mp pop_frame
+    /// Pop the topmost stack frame from the [NamespaceStack]
+    ///
     /// Panics if the stack is empty
     pub fn pop_frame(&mut self) {
         self.frames.pop().unwrap();
     }
 
     //mi stack_depth
+    /// Returns the depth of the stack
     fn stack_depth(&self) -> usize {
         self.frames.len()
     }
 
     //mi borrow_frame
+    /// Borrow the 'nth' frame of the stack
     fn borrow_frame(&self, n: usize) -> &NamespaceStackFrame {
         &self.frames[n]
     }
 
     //mp add_mapping_by_id
+    /// Add a mapping of NSPrefixId -> NSUriId to the topmost stack frame
     pub fn add_mapping_by_id(&mut self, map: NSMap) {
         self.frames.last_mut().unwrap().add_mapping_by_id(map)
     }
@@ -216,7 +226,10 @@ impl<'a> NamespaceStack<'a> {
     }
 
     //mp find_mapping
-    /// Find a mapping of a prefix ID
+    /// Find a mapping of an [NSPrefixId] at the highest level of the
+    /// stack that it exists
+    ///
+    /// Returns `None` if there is no mapping on the stack at all
     pub fn find_mapping(&self, prefix_id: NSPrefixId) -> Option<NSUriId> {
         let n = self.frames.len();
         for i in 0..n {
@@ -229,11 +242,14 @@ impl<'a> NamespaceStack<'a> {
     }
 
     //mp find_prefix_id
+    /// Find the NSPrefixId corresponding to a string within the
+    /// underlying [Namespace]
     pub fn find_prefix_id(&mut self, prefix: &str) -> Option<NSPrefixId> {
         self.namespaces.find_prefix(prefix)
     }
 
     //mp borrow_mapping
+    /// Borrow the two strings corresponding to an [NSMap] within the [Namespace]
     pub fn borrow_mapping(&self, map: NSMap) -> (&str, &str) {
         (
             self.borrow_prefix(map.prefix_id()),
@@ -242,26 +258,33 @@ impl<'a> NamespaceStack<'a> {
     }
 
     //mp borrow_name
+    /// Borrow the name corresponding to an [NSNameId] within the [Namespace]
     pub fn borrow_name(&self, name: NSNameId) -> &str {
         self.namespaces.borrow_name_str(name)
     }
 
     //mp borrow_prefix
+    /// Borrow the prefix corresponding to an [NSPrefixId] within the [Namespace]
     pub fn borrow_prefix(&self, prefix: NSPrefixId) -> &str {
         self.namespaces.borrow_prefix_str(prefix)
     }
 
     //mp borrow_uri
+    /// Borrow the URI corresponding to an [NSUriId] within the [Namespace]
     pub fn borrow_uri(&self, uri: NSUriId) -> &str {
         self.namespaces.borrow_uri_str(uri)
     }
 
     //mp add_name
+    /// Add a name for a string to the [Namespace]; if it is already
+    /// in the [Namespace] then it is not added but the current
+    /// NSNameId is used.
     pub fn add_name(&mut self, name: &str) -> NSNameId {
         self.namespaces.find_or_add_name(name)
     }
 
     //mp add_ns
+    /// Add a prefix -> URI mapping to the [Namespace]
     pub fn add_ns(&mut self, prefix: &str, uri: &str) -> NSMap {
         let ns_map = self.namespaces.add_mapping(prefix, uri);
         self.add_mapping_by_id(ns_map);
@@ -269,12 +292,14 @@ impl<'a> NamespaceStack<'a> {
     }
 
     //mp add_ns_if_unset
+    /// Add a prefix -> URI mapping to the [Namespace]
     pub fn add_ns_if_unset(&mut self, prefix: &str, uri: &str) -> (NSMap, bool) {
         let ns_map = self.namespaces.add_mapping(prefix, uri);
         (ns_map, self.add_mapping_by_id_if_unset(ns_map))
     }
 
     //fp fmt_map
+    /// Format an [NSMap] within the [Namespace]
     pub fn fmt_map<W: std::fmt::Write>(
         &self,
         w: &mut W,
@@ -287,8 +312,11 @@ impl<'a> NamespaceStack<'a> {
             self.borrow_uri(map.uri_id())
         )
     }
+
+    //zz All done
 }
 
+//ip IntoIterator for NamespaceStack
 impl<'a, 'b> IntoIterator for &'b NamespaceStack<'a> {
     type Item = NSMap;
     type IntoIter = NamespaceStackIterator<'a, 'b>;

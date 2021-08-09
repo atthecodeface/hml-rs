@@ -1,3 +1,17 @@
+//a Documentation
+#![warn(missing_docs)]
+#![warn(missing_doc_code_examples)]
+/*!
+
+# Escape handling
+
+This module is not ready for use
+
+This module provides escape handling for XML and entity replacement
+
+!*/
+
+//a Imports
 use std::collections::HashMap;
 
 /// Result of unescaping/unentity-ify a string
@@ -16,14 +30,16 @@ pub const ESCAPE_GT: usize = 4;
 //cp ESCAPE_LF
 /// Bitmask to enable unescaping of &#xA;
 pub const ESCAPE_LF: usize = 8;
-//cp ESCAPE_CR 
+//cp ESCAPE_CR
 /// Bitmask to enable unescaping of &#xD;
 pub const ESCAPE_CR: usize = 16;
 
-//cp Bitmask to enable unescaping of all attributes
+//cp ESCAPE_ATTR
+/// Bitmask to enable unescaping of all attributes
 pub const ESCAPE_ATTR: usize = ESCAPE_QUOTE | ESCAPE_APOS | ESCAPE_GT | ESCAPE_LF | ESCAPE_CR | 0;
 
-//cp Bitmask used to unescape PCDATA - that is, none
+//cp ESCAPE_PCDATA
+/// Bitmask used to unescape PCDATA - that is, none
 pub const ESCAPE_PCDATA: usize = 0;
 
 #[inline(always)]
@@ -75,6 +91,8 @@ pub fn escape_required(bytes: &[u8], char_set: usize, i: usize, n: usize) -> Opt
     Some(string)
 }
 
+//fp escape
+/// Return Some(string) if escaping is needed (given char_set), else None
 pub fn escape(s: &str, char_set: usize) -> Option<String> {
     // Note that s.len is the length in bytes, not in utf8 characters
     let n = s.len();
@@ -108,15 +126,22 @@ pub fn escape(s: &str, char_set: usize) -> Option<String> {
     None
 }
 
+//tp Entities
+/// A set of entities that should be unmapped and how they should be unmapped
 pub struct Entities<'a> {
     map: HashMap<&'a [u8], &'a str>,
 }
 impl<'a> Entities<'a> {
+    //fp new
+    /// Create a new empty Entities set
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
     }
+
+    //fp xml
+    /// Create a new Entities set for XML entity parsing
     pub fn xml() -> Self {
         let mut map: HashMap<&[u8], &str> = HashMap::new();
         map.insert(b"amp", "&");

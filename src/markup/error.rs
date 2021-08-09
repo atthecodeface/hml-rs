@@ -26,27 +26,39 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     /// An I/O error occured in the underlying 'Read' or 'Write'
     Io(std::io::Error),
+    /// A message
     Msg(String),
 }
 
 impl Error {
+    //fp empty_name
+    /// An error message indicating an empty name was provided, which
+    /// is illegal
     pub fn empty_name<T>() -> Result<T> {
         Err(Self::Msg(format!("empty name")))
     }
+
+    //fp unmapped_prefix
+    /// Create an error from the use of an unmapped prefix / namespace
     pub fn unmapped_prefix<T>(p: &str) -> Result<T> {
         Err(Self::Msg(format!("unmapped_prefix {}", p)))
     }
+
+    //fp bad_name
+    /// Create an error indicating a bad name (such as a:b:c)
     pub fn bad_name<T>(s: &str) -> Result<T> {
         Err(Self::Msg(format!("bad_name {}", s)))
     }
 }
 
+//ip From<std::io::Error> for Error
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Error {
         Error::Io(err)
     }
 }
 
+//ip Display for Error
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -56,6 +68,7 @@ impl std::fmt::Display for Error {
     }
 }
 
+//ip std::error::Error for Error
 impl std::error::Error for Error {
     fn description(&self) -> &str {
         match *self {

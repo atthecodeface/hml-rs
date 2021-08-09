@@ -286,7 +286,7 @@ mod test {
     use std::convert::TryInto;
     #[test]
     fn test0() {
-        let e: Escapable = r"fred".try_into().unwrap();
+        let _e: Escapable = r"fred".try_into().unwrap();
         assert!(Escapable::new(r"\").is_err());
         assert!(Escapable::new(r"\u").is_err());
         assert!(Escapable::new(r"\ua").is_err());

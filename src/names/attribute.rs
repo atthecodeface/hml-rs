@@ -62,6 +62,8 @@ impl Attribute {
 
 //a Attributes
 //tp Attributes
+/// A list of attributes in the order in which they appear in the
+/// markup stream
 #[derive(Debug)]
 pub struct Attributes {
     //
@@ -71,15 +73,21 @@ pub struct Attributes {
 //ip Attributes
 impl Attributes {
     //fp new
+    /// Create a new list of [Attribute]
     pub fn new() -> Self {
         Self {
             attributes: Vec::new(),
         }
     }
     //mp is_empty
+    /// Returns true if the [Attributes] list is empty
     pub fn is_empty(&self) -> bool {
         self.attributes.is_empty()
     }
+
+    //mp add
+    /// Add a prefix/name and value to the [Attributes] list, using
+    /// the [NamespaceStack] to resolve the prefix into a URI
     pub fn add(
         &mut self,
         ns_stack: &mut NamespaceStack,
@@ -91,13 +99,24 @@ impl Attributes {
             .push(Attribute::new(ns_stack, prefix, name, value)?);
         Ok(())
     }
+
+    //mp steal
+    /// Take all the attributes away from another [Attributes] and add them to this
     pub fn steal(&mut self, v: &mut Self) {
         self.attributes.append(&mut v.attributes);
     }
+
+    //mp take
+    /// Deconstruct this list of [Attribute] to a `Vec<Attribute>`
     pub fn take(self) -> Vec<Attribute> {
         self.attributes
     }
+
+    //mp borrow
+    /// Borrow the [Attribute] vec
     pub fn borrow(&self) -> &Vec<Attribute> {
         &self.attributes
     }
+
+    //zz All done
 }

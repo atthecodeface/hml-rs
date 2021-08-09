@@ -62,6 +62,9 @@ where
     P: Position,
     E: Error<Position = P>,
 {
+    //fp of_reader
+    /// Create a given error with a [Span] of just the current reader
+    /// position
     pub fn of_reader<T, R>(reader: &R, reader_error: E) -> Result<T, P, E>
     where
         R: Reader<Position = P, Error = E>,
@@ -69,35 +72,62 @@ where
         let span = Span::new_at(reader.borrow_pos());
         Err(Self::ReaderError(span, reader_error))
     }
+
+    //fp unexpected_eof
+    /// Return an unexpected_eof error at the specified positions
     pub fn unexpected_eof<T>(start: &P, end: &P) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::UnexpectedEOF(span))
     }
+
+    //fp unexpected_character
+    /// Return an unexpected_character error at the specified positions
     pub fn unexpected_character<T>(start: &P, end: &P, ch: char) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::UnexpectedCharacter(span, ch))
     }
+
+    //fp unexpected_newline_in_string
+    /// Return an unexpected newline error
     pub fn unexpected_newline_in_string<T>(start: &P, end: &P) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::UnexpectedNewlineInQuotedString(span))
     }
+
+    //fp expected_equals
+    /// Return an error indicating an expected character, but got a different character
     pub fn expected_equals<T>(start: &P, end: &P, ch: char) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::ExpectedEquals(span, ch))
     }
+
+    //fp no_more_events
+    /// Return an error indicating a read beyond the end of the stream
     pub fn no_more_events<T>() -> Result<T, P, E> {
         Err(Self::BeyondEndOfTokens)
     }
+
+    //fp unexpected_tag_indent
+    /// Return an unexpected_tag_indent error over the specified span
     pub fn unexpected_tag_indent<T>(span: Span<P>, depth: usize) -> Result<T, P, E> {
         Err(Self::UnexpectedTagIndent(span, depth))
     }
+
+    //fp unexpected_attribute
+    /// Return an unexpected_attribute eror over the given span
     pub fn unexpected_attribute<T>(span: Span<P>, prefx: &str, name: &str) -> Result<T, P, E> {
         let name = format!("{}:{}", prefx, name);
         Err(Self::UnexpectedAttribute(span, name))
     }
+
+    //fp of_markup_error
+    /// Return a ReaderError of a MarkupError over a certain span
     pub fn of_markup_error(span: Span<P>, e: crate::markup::Error) -> Self {
         Self::MarkupError(span, e)
     }
+
+    //fp of_markup_error
+    /// Map a markup result over a span to a ReaderError result
     pub fn of_markup_result<T>(span: Span<P>, r: crate::markup::Result<T>) -> Result<T, P, E> {
         match r {
             Ok(t) => Ok(t),

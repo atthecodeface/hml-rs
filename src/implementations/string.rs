@@ -16,6 +16,15 @@ limitations under the License.
 @brief   String reader implementation for Markup library
  */
 
+//a Documentation
+/*!
+
+# String as a [Reader]
+
+This module provides a [Reader] implementation for `String`.
+
+!*/
+
 //a Imports
 use crate::reader;
 
@@ -112,6 +121,13 @@ impl std::fmt::Display for Character {
 
 //a Error
 //tp Error
+/// Error returned by a string
+///
+/// A String cannot generate errors - there is no underlying I/O for
+/// example; a String is indeed guaranteed by Rust to be a sequence of
+/// unicode code points.
+///
+/// Reading beyond the end of the String is not even an error - it provides EOF.
 #[derive(Debug)]
 pub struct Error();
 

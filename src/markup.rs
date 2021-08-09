@@ -12,9 +12,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    types.rs
-@brief   Types used throughout the reader files
+@file    markup.rs
+@brief   Markup module
  */
+
+//a Documentation
+/*!
+
+# Markup module
+
+This module provides common types for managing markup languages. It
+provides a standard error type that utilizes a file/stream [Span]
+trait, and then provides markup [Event]s for parsing or writing markup
+streams.
+
+!*/
 
 //a Imports
 mod error;

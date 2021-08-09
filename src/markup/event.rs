@@ -71,6 +71,7 @@ pub enum EventType {
 }
 
 //tp Event
+/// A markup event occupying a [Span] on a stream
 #[derive(Debug)]
 pub enum Event<F: Span> {
     /// The start of the document
@@ -81,6 +82,7 @@ pub enum Event<F: Span> {
         version: usize,
     },
 
+    /// The end of the document
     EndDocument {
         /// File position of end of the document
         span: F,
@@ -88,29 +90,48 @@ pub enum Event<F: Span> {
 
     /// Denotes a beginning of an XML element.
     StartElement {
+        /// The span of the start element 'tag'
         span: F,
-        tag: Tag, // includes attributes
+        /// The actual tag (prefix, URI, name, attributes)
+        tag: Tag,
     },
 
     /// Denotes an end of an XML element.
-    EndElement { span: F, name: Name },
+    EndElement {
+        /// The span of the end element 'tag'
+        span: F,
+        /// The (prefix, URI, name) of the element (equal to the same
+        /// value as the StartElement that this closes)
+        name: Name,
+    },
 
     /// Denotes one part of the content of an element
     Content {
+        /// The span of the content
         span: F,
+        /// The type of the content: raw, whitespace, needs unescaping
         ctype: ContentType,
+        /// The string content
         data: String,
     },
 
     /// Denotes an XML processing instruction.
     ProcessingInstruction {
+        /// The span of the PI
         span: F,
+        /// A NSNameId within the namespace that is the name of the processing instruction
         name: NSNameId,
+        /// An optional value for the processing instruction
         data: Option<String>,
     },
 
     /// Denotes a comment.
-    Comment { span: F, data: Vec<String> },
+    Comment {
+        /// The span of the comment
+        span: F,
+        /// One string per line of the comment
+        data: Vec<String>,
+    },
 }
 
 //ip Event
