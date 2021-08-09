@@ -1,15 +1,29 @@
 use std::collections::HashMap;
 
-type Result<T> = std::result::Result<T, std::io::Error>;
+/// Result of unescaping/unentity-ify a string
+pub type Result<T> = std::result::Result<T, std::io::Error>;
 
+// Bit mask of escapes that should be parsed
+//cp ESCAPE_QUOTE
+/// Bitmask to enable unescaping of &quot;
 pub const ESCAPE_QUOTE: usize = 1;
+//cp ESCAPE_APOS
+/// Bitmask to enable unescaping of &apos;
 pub const ESCAPE_APOS: usize = 2;
+//cp ESCAPE_GT
+/// Bitmask to enable unescaping of &gt;
 pub const ESCAPE_GT: usize = 4;
+//cp ESCAPE_LF
+/// Bitmask to enable unescaping of &#xA;
 pub const ESCAPE_LF: usize = 8;
+//cp ESCAPE_CR 
+/// Bitmask to enable unescaping of &#xD;
 pub const ESCAPE_CR: usize = 16;
 
+//cp Bitmask to enable unescaping of all attributes
 pub const ESCAPE_ATTR: usize = ESCAPE_QUOTE | ESCAPE_APOS | ESCAPE_GT | ESCAPE_LF | ESCAPE_CR | 0;
 
+//cp Bitmask used to unescape PCDATA - that is, none
 pub const ESCAPE_PCDATA: usize = 0;
 
 #[inline(always)]
@@ -17,6 +31,8 @@ fn do_esc(char_set: usize, esc: usize) -> bool {
     (char_set & esc) != 0
 }
 
+//fp escape_required
+/// Return a Some(string) where string is an unescaped version of the input
 pub fn escape_required(bytes: &[u8], char_set: usize, i: usize, n: usize) -> Option<String> {
     let mut r = Vec::with_capacity(n);
     if i > 0 {

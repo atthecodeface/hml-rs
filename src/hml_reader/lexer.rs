@@ -531,7 +531,7 @@ impl<R: Reader> Lexer<R> {
             return self.expected_equals(reader, ch);
         }
         let value = self.read_string(reader)?;
-        let span = span.end_at(reader.borrow_pos());
+        span = span.end_at(reader.borrow_pos());
         Ok(Token::attribute(span, ns, name, value))
     }
 
