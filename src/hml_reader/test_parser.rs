@@ -429,6 +429,20 @@ mod tests {
                          EndE,
                          EndD
                        ] );
+        test_string( r###"#svg r##'banana'#' '## "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content(ContentType::Raw, "banana'#' "),
+                         EndE,
+                         EndD
+                       ] );
+        test_string( r###"#svg r##'banana'#''## "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content(ContentType::Raw, "banana'#'"),
+                         EndE,
+                         EndD
+                       ] );
     }
 }
 
