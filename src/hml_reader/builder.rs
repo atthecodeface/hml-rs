@@ -17,27 +17,32 @@ limitations under the License.
  */
 
 //a Imports
-use crate::names::{Tag, Name, Attributes, NamespaceStack};
 use crate::markup::Event;
-use crate::reader::{Reader, Position};
-use crate::reader::{Span, ReaderError};
+use crate::names::{Attributes, Name, NamespaceStack, Tag};
+use crate::reader::{Position, Reader};
+use crate::reader::{ReaderError, Span};
 
 type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
 //tp OpenTag
 #[derive(Clone, Debug)]
-pub struct OpenTag<P:Position, T:std::fmt::Debug> {
-    span : Span<P>,
-    prefix : String,
-    name   : String,
-    pub extra : T,
+pub struct OpenTag<P: Position, T: std::fmt::Debug> {
+    span: Span<P>,
+    prefix: String,
+    name: String,
+    pub extra: T,
 }
 
 //ip OpenTag
-impl <P:Position, T:std::fmt::Debug> OpenTag<P, T> {
-    pub fn new(span:Span<P>, prefix:String, name:String, extra:T) -> Self {
-        Self { span, prefix, name, extra }
+impl<P: Position, T: std::fmt::Debug> OpenTag<P, T> {
+    pub fn new(span: Span<P>, prefix: String, name: String, extra: T) -> Self {
+        Self {
+            span,
+            prefix,
+            name,
+            extra,
+        }
     }
     pub fn span(&self) -> &Span<P> {
         &self.span
@@ -46,17 +51,23 @@ impl <P:Position, T:std::fmt::Debug> OpenTag<P, T> {
 
 //tp CloseTag
 #[derive(Clone, Debug)]
-pub struct CloseTag<P:Position, T:std::fmt::Debug> {
-    span : Span<P>,
-    name : Name,
-    pub extra : T,
+pub struct CloseTag<P: Position, T: std::fmt::Debug> {
+    span: Span<P>,
+    name: Name,
+    pub extra: T,
 }
 
 //ip CloseTag
-impl <P:Position, T:std::fmt::Debug> CloseTag<P, T> {
-    pub fn new(span:Span<P>, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, extra:T) -> crate::markup::Result<Self> {
+impl<P: Position, T: std::fmt::Debug> CloseTag<P, T> {
+    pub fn new(
+        span: Span<P>,
+        ns_stack: &mut NamespaceStack,
+        prefix: &str,
+        name: &str,
+        extra: T,
+    ) -> crate::markup::Result<Self> {
         let name = Name::new(ns_stack, prefix, name)?;
-        Ok ( Self { span, name, extra } )
+        Ok(Self { span, name, extra })
     }
     pub fn span(&self) -> &Span<P> {
         &self.span
@@ -82,39 +93,64 @@ impl <P:Position, T:std::fmt::Debug> CloseTag<P, T> {
 ///
 /// When the content completes an [EndElement] can be issued
 #[derive(Debug)]
-pub struct StackElement <R:Reader, T:std::fmt::Debug> {
-    parent_depth : usize,
-    open_tag     : OpenTag<R::Position, T>,
-    tag_name     : Name,
-    attributes   : Attributes,
+pub struct StackElement<R: Reader, T: std::fmt::Debug> {
+    parent_depth: usize,
+    open_tag: OpenTag<R::Position, T>,
+    tag_name: Name,
+    attributes: Attributes,
 }
 
 //ii StackElement
-impl <R:Reader, T:std::fmt::Debug> StackElement<R, T> {
-    pub fn new(ns_stack: &mut NamespaceStack,
-               parent_depth:usize,
-               open_tag:OpenTag<R::Position, T>
+impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
+    pub fn new(
+        ns_stack: &mut NamespaceStack,
+        parent_depth: usize,
+        open_tag: OpenTag<R::Position, T>,
     ) -> Self {
         ns_stack.push_frame();
 
         let attributes = Attributes::new();
         let tag_name = Name::none();
         StackElement {
-            parent_depth, open_tag, tag_name, attributes
+            parent_depth,
+            open_tag,
+            tag_name,
+            attributes,
         }
     }
-    pub fn add_attribute(&mut self, span:Span<R::Position>, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> Result<R,()> {
+    pub fn add_attribute(
+        &mut self,
+        span: Span<R::Position>,
+        ns_stack: &mut NamespaceStack,
+        prefix: &str,
+        name: &str,
+        value: String,
+    ) -> Result<R, ()> {
         ReaderError::of_markup_result(span, self.attributes.add(ns_stack, prefix, name, value))
     }
-    pub fn as_start_element(&mut self, ns_stack:&mut NamespaceStack) -> Result<R, Event<Span<R::Position>>> {
+    pub fn as_start_element(
+        &mut self,
+        ns_stack: &mut NamespaceStack,
+    ) -> Result<R, Event<Span<R::Position>>> {
         let attributes = std::mem::replace(&mut self.attributes, Attributes::new());
-        let tag = ReaderError::of_markup_result(self.open_tag.span, Tag::new(ns_stack, &self.open_tag.prefix, &self.open_tag.name, attributes))?;
+        let tag = ReaderError::of_markup_result(
+            self.open_tag.span,
+            Tag::new(
+                ns_stack,
+                &self.open_tag.prefix,
+                &self.open_tag.name,
+                attributes,
+            ),
+        )?;
         self.tag_name = tag.name;
-        Ok(Event::start_element( self.open_tag.span, tag ))
+        Ok(Event::start_element(self.open_tag.span, tag))
     }
-    pub fn as_end_element(&self, ns_stack:&mut NamespaceStack, span:&Span<R::Position>) -> (Event<Span<R::Position>>, usize) {
+    pub fn as_end_element(
+        &self,
+        ns_stack: &mut NamespaceStack,
+        span: &Span<R::Position>,
+    ) -> (Event<Span<R::Position>>, usize) {
         ns_stack.pop_frame();
-        ( Event::end_element( *span, self.tag_name ),
-          self.parent_depth )
+        (Event::end_element(*span, self.tag_name), self.parent_depth)
     }
 }

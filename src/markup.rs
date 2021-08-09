@@ -17,11 +17,11 @@ limitations under the License.
  */
 
 //a Imports
-mod traits;
 mod error;
 mod event;
+mod traits;
 
 //a Exports
-pub use traits::Span;
 pub use error::{Error, Result};
-pub use event::{Event, EventType, ContentType};
+pub use event::{ContentType, Event, EventType};
+pub use traits::Span;

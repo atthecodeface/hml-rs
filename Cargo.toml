@@ -1,11 +1,20 @@
 [package]
-name = "hml"
-version = "0.0.1"
+name = "hml-rs"
+version = "0.0.2"
 edition = "2018"
+readme = "README.md"
+authors = ["Gavin J Stark"]
+description = "Markup language events and readers, supporting 'human markup language'\n"
+homepage = "https://github.com/atthecodeface/hml-rs"
+documentation = "https://docs.rs/hml-rs"
+keywords = ["xml", "parsing", "parser"]
+categories = ["parsing"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/atthecodeface/hml-rs"
 
 [dependencies.utf8-read]
 version = "0.4.0"
 
 # xml-rs = "0.8.3"
-# clap = "~2.27.0"
+# clap = "2.27"
 

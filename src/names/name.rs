@@ -17,8 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use super::{NSNameId, NSPrefixId, NSUriId};
 use super::NamespaceStack;
+use super::{NSNameId, NSPrefixId, NSUriId};
 use crate::markup;
 
 //a Name
@@ -33,8 +33,6 @@ pub struct Name {
 
     /// A name
     pub name: NSNameId,
-
-
 }
 
 //ip Name
@@ -48,25 +46,29 @@ impl Name {
     }
 
     //fp new_local
-    pub fn new_local(ns:&mut NamespaceStack, name:&str) -> markup::Result<Self> {
+    pub fn new_local(ns: &mut NamespaceStack, name: &str) -> markup::Result<Self> {
         if name.is_empty() {
-            return crate::markup::Error::empty_name()
+            return crate::markup::Error::empty_name();
         }
         let prefix = NSPrefixId::none();
-        let uri    = NSUriId::none();
-        let name   = ns.add_name(name);
+        let uri = NSUriId::none();
+        let name = ns.add_name(name);
         Ok(Self { prefix, uri, name })
     }
 
     //fp new
-    pub fn new(ns:&mut NamespaceStack, prefix:&str, name:&str) -> crate::markup::Result<Self> {
+    pub fn new(ns: &mut NamespaceStack, prefix: &str, name: &str) -> crate::markup::Result<Self> {
         if name.is_empty() {
-            return crate::markup::Error::empty_name()
+            return crate::markup::Error::empty_name();
         }
         if let Some(p_id) = ns.find_prefix_id(prefix) {
             if let Some(uri) = ns.find_mapping(p_id) {
-                let name   = ns.add_name(name);
-                Ok(Self { prefix:p_id, uri, name })
+                let name = ns.add_name(name);
+                Ok(Self {
+                    prefix: p_id,
+                    uri,
+                    name,
+                })
             } else {
                 crate::markup::Error::unmapped_prefix(prefix)
             }
@@ -76,23 +78,25 @@ impl Name {
     }
 
     //fp from_str
-    pub fn from_str(ns:&mut NamespaceStack, s:&str) -> crate::markup::Result<Self> {
+    pub fn from_str(ns: &mut NamespaceStack, s: &str) -> crate::markup::Result<Self> {
         let mut it = s.split(':');
         match (it.next(), it.next(), it.next()) {
             (Some(prefix), Some(name), None) => Self::new(ns, prefix, name),
-            (Some(name), None, None)         => Self::new_local(ns, name),
+            (Some(name), None, None) => Self::new_local(ns, name),
             _ => crate::markup::Error::bad_name(s),
         }
     }
 
     //fp to_string
-    pub fn to_string(&self, ns:&NamespaceStack) -> String {
+    pub fn to_string(&self, ns: &NamespaceStack) -> String {
         if self.prefix.is_none() {
             format!("{}", ns.borrow_name(self.name))
         } else {
-            format!("{}:{}",
-                    ns.borrow_prefix(self.prefix),
-                    ns.borrow_name(self.name) )
+            format!(
+                "{}:{}",
+                ns.borrow_prefix(self.prefix),
+                ns.borrow_name(self.name)
+            )
         }
     }
 }

@@ -34,9 +34,13 @@ pub struct Tag {
 
 //ip Tag
 impl Tag {
-    pub fn new(ns_stack:&mut NamespaceStack, ns:&str, name:&str, attributes:Attributes) -> crate::markup::Result<Self> {
+    pub fn new(
+        ns_stack: &mut NamespaceStack,
+        ns: &str,
+        name: &str,
+        attributes: Attributes,
+    ) -> crate::markup::Result<Self> {
         let name = Name::new(ns_stack, ns, name)?;
         Ok(Self { name, attributes })
     }
 }
-

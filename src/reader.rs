@@ -1,8 +1,7 @@
-mod traits;
 mod error;
 mod span;
+mod traits;
 
 pub use error::{ReaderError, Result};
 pub use span::Span;
-pub use traits::{Position, Character, Error, Reader};
-
+pub use traits::{Character, Error, Position, Reader};

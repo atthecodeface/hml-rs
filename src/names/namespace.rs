@@ -18,13 +18,13 @@ limitations under the License.
 
 /*a Imports
 */
-use std::collections::{HashSet};
-use super::{NSNameId, NSPrefixId, NSUriId, NSMap};
+use super::{NSMap, NSNameId, NSPrefixId, NSUriId};
+use std::collections::HashSet;
 
 //a Namespace
 //tt NamespaceDisplay
 pub trait NamespaceDisplay {
-    fn fmt(&self, f:&mut std::fmt::Formatter) -> std::fmt::Result;
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result;
 }
 
 //tp Namespace
@@ -35,23 +35,29 @@ pub trait NamespaceDisplay {
 ///
 /// More complex implementations will move to using BTree for the prefixes
 pub struct Namespace {
-    xmlns : bool,
-     /// ALl the
-    prefixes : Vec<String>,
-    uris     : Vec<String>,
-    names    : Vec<String>,
-    mappings : HashSet<NSMap>,
+    xmlns: bool,
+    /// ALl the
+    prefixes: Vec<String>,
+    uris: Vec<String>,
+    names: Vec<String>,
+    mappings: HashSet<NSMap>,
 }
 
 impl Namespace {
     //fp new
     /// Create a new Namespace object
-    pub fn new(xmlns:bool) -> Self {
+    pub fn new(xmlns: bool) -> Self {
         let uris = Vec::new();
         let prefixes = Vec::new();
         let names = Vec::new();
         let mappings = HashSet::new();
-        Self { xmlns, uris, prefixes, names, mappings }
+        Self {
+            xmlns,
+            uris,
+            prefixes,
+            names,
+            mappings,
+        }
     }
 
     //mp uses_xmlns
@@ -60,43 +66,49 @@ impl Namespace {
     }
 
     //mp find_name
-    pub fn find_name(&mut self, name:&str) -> Option<NSNameId> {
+    pub fn find_name(&mut self, name: &str) -> Option<NSNameId> {
         if name == "" {
             Some(NSNameId::none())
         } else {
-            for (i,p) in self.names.iter().enumerate() {
-                if *p == *name { return Some(NSNameId::new(i)); }
+            for (i, p) in self.names.iter().enumerate() {
+                if *p == *name {
+                    return Some(NSNameId::new(i));
+                }
             }
             None
         }
     }
 
     //mp find_prefix
-    pub fn find_prefix(&mut self, prefix:&str) -> Option<NSPrefixId> {
+    pub fn find_prefix(&mut self, prefix: &str) -> Option<NSPrefixId> {
         if prefix == "" {
             Some(NSPrefixId::none())
         } else {
-            for (i,p) in self.prefixes.iter().enumerate() {
-                if *p == *prefix { return Some(NSPrefixId::new(i)); }
+            for (i, p) in self.prefixes.iter().enumerate() {
+                if *p == *prefix {
+                    return Some(NSPrefixId::new(i));
+                }
             }
             None
         }
     }
 
     //mp find_uri
-    pub fn find_uri(&mut self, uri:&str) -> Option<NSUriId> {
+    pub fn find_uri(&mut self, uri: &str) -> Option<NSUriId> {
         if uri == "" {
             Some(NSUriId::none())
         } else {
-            for (i,p) in self.uris.iter().enumerate() {
-                if *p == *uri { return Some(NSUriId::new(i)); }
+            for (i, p) in self.uris.iter().enumerate() {
+                if *p == *uri {
+                    return Some(NSUriId::new(i));
+                }
             }
             None
         }
     }
 
     //mp find_or_add_name
-    pub(crate) fn find_or_add_name(&mut self, name:&str) -> NSNameId {
+    pub(crate) fn find_or_add_name(&mut self, name: &str) -> NSNameId {
         if let Some(id) = self.find_name(name) {
             id
         } else {
@@ -107,7 +119,7 @@ impl Namespace {
     }
 
     //mp find_or_add_prefix
-    pub(crate) fn find_or_add_prefix(&mut self, prefix:&str) -> NSPrefixId {
+    pub(crate) fn find_or_add_prefix(&mut self, prefix: &str) -> NSPrefixId {
         if let Some(id) = self.find_prefix(prefix) {
             id
         } else {
@@ -118,7 +130,7 @@ impl Namespace {
     }
 
     //mp find_or_add_uri
-    fn find_or_add_uri(&mut self, uri:&str) -> NSUriId {
+    fn find_or_add_uri(&mut self, uri: &str) -> NSUriId {
         if let Some(id) = self.find_uri(uri) {
             id
         } else {
@@ -129,7 +141,7 @@ impl Namespace {
     }
 
     //mp borrow_name_str
-    pub fn borrow_name_str(&self, name:NSNameId) -> &str {
+    pub fn borrow_name_str(&self, name: NSNameId) -> &str {
         if name.is_none() {
             ""
         } else {
@@ -138,7 +150,7 @@ impl Namespace {
     }
 
     //mp borrow_prefix_str
-    pub fn borrow_prefix_str(&self, prefix:NSPrefixId) -> &str {
+    pub fn borrow_prefix_str(&self, prefix: NSPrefixId) -> &str {
         if prefix.is_none() {
             ""
         } else {
@@ -147,7 +159,7 @@ impl Namespace {
     }
 
     //mp borrow_uri_str
-    pub fn borrow_uri_str(&self, uri:NSUriId) -> &str {
+    pub fn borrow_uri_str(&self, uri: NSUriId) -> &str {
         if uri.is_none() {
             ""
         } else {
@@ -156,14 +168,14 @@ impl Namespace {
     }
 
     //mp add_mapping
-    pub fn add_mapping(&mut self, prefix:&str, uri:&str) -> NSMap {
+    pub fn add_mapping(&mut self, prefix: &str, uri: &str) -> NSMap {
         let p_id = self.find_or_add_prefix(prefix);
         let u_id = self.find_or_add_uri(uri);
         self.add_mapping_by_id(p_id, u_id)
     }
 
     //mp add_mapping_by_id
-    pub fn add_mapping_by_id(&mut self, prefix_id:NSPrefixId, uri_id:NSUriId) -> NSMap {
+    pub fn add_mapping_by_id(&mut self, prefix_id: NSPrefixId, uri_id: NSUriId) -> NSMap {
         let ns_map = NSMap::new(prefix_id, uri_id);
         if !self.mappings.contains(&ns_map) {
             self.mappings.insert(ns_map);
@@ -174,5 +186,4 @@ impl Namespace {
 
 //a Test
 #[cfg(test)]
-mod test {
-}
+mod test {}

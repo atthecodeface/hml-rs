@@ -33,11 +33,11 @@ impl Error {
     pub fn empty_name<T>() -> Result<T> {
         Err(Self::Msg(format!("empty name")))
     }
-    pub fn unmapped_prefix<T>(p:&str) -> Result<T> {
-        Err(Self::Msg(format!("unmapped_prefix {}",p)))
+    pub fn unmapped_prefix<T>(p: &str) -> Result<T> {
+        Err(Self::Msg(format!("unmapped_prefix {}", p)))
     }
-    pub fn bad_name<T>(s:&str) -> Result<T> {
-        Err(Self::Msg(format!("bad_name {}",s)))
+    pub fn bad_name<T>(s: &str) -> Result<T> {
+        Err(Self::Msg(format!("bad_name {}", s)))
     }
 }
 
@@ -50,7 +50,7 @@ impl From<std::io::Error> for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Error::Io(e)  => write!(f, "HML: IO error: {}", e),
+            Error::Io(e) => write!(f, "HML: IO error: {}", e),
             Error::Msg(s) => write!(f, "HML: {}", s),
         }
     }
@@ -64,4 +64,3 @@ impl std::error::Error for Error {
         }
     }
 }
-

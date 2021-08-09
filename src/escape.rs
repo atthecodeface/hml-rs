@@ -2,27 +2,22 @@ use std::collections::HashMap;
 
 type Result<T> = std::result::Result<T, std::io::Error>;
 
-pub const ESCAPE_QUOTE : usize = 1;
-pub const ESCAPE_APOS  : usize = 2;
-pub const ESCAPE_GT    : usize = 4;
-pub const ESCAPE_LF    : usize = 8;
-pub const ESCAPE_CR    : usize = 16;
+pub const ESCAPE_QUOTE: usize = 1;
+pub const ESCAPE_APOS: usize = 2;
+pub const ESCAPE_GT: usize = 4;
+pub const ESCAPE_LF: usize = 8;
+pub const ESCAPE_CR: usize = 16;
 
-pub const ESCAPE_ATTR : usize =  ESCAPE_QUOTE |
-ESCAPE_APOS  |
-ESCAPE_GT    |
-ESCAPE_LF    |
-ESCAPE_CR    |
-0;
+pub const ESCAPE_ATTR: usize = ESCAPE_QUOTE | ESCAPE_APOS | ESCAPE_GT | ESCAPE_LF | ESCAPE_CR | 0;
 
-pub const ESCAPE_PCDATA : usize = 0;
+pub const ESCAPE_PCDATA: usize = 0;
 
 #[inline(always)]
-fn do_esc(char_set:usize, esc:usize) -> bool {
+fn do_esc(char_set: usize, esc: usize) -> bool {
     (char_set & esc) != 0
 }
 
-pub fn escape_required(bytes:&[u8], char_set:usize, i:usize, n:usize) -> Option<String> {
+pub fn escape_required(bytes: &[u8], char_set: usize, i: usize, n: usize) -> Option<String> {
     let mut r = Vec::with_capacity(n);
     if i > 0 {
         r.extend_from_slice(&bytes[0..i]);
@@ -33,14 +28,30 @@ pub fn escape_required(bytes:&[u8], char_set:usize, i:usize, n:usize) -> Option<
             r.push(b);
         } else {
             match b {
-                b'&'  => {r.extend_from_slice(b"&amp;");},
-                b'<'  => {r.extend_from_slice(b"&lt;");},
-                b'\'' if do_esc(char_set, ESCAPE_APOS)  => {r.extend_from_slice(b"&apos;");},
-                b'\"' if do_esc(char_set, ESCAPE_QUOTE) => {r.extend_from_slice(b"&quot;");},
-                b'>'  if do_esc(char_set, ESCAPE_GT)    => {r.extend_from_slice(b"&gt;");},
-                b'\n' if do_esc(char_set, ESCAPE_LF)    => {r.extend_from_slice(b"&#xA;");},
-                b'\r' if do_esc(char_set, ESCAPE_CR)    => {r.extend_from_slice(b"&#xD;");},
-                _ => {r.push(b);},
+                b'&' => {
+                    r.extend_from_slice(b"&amp;");
+                }
+                b'<' => {
+                    r.extend_from_slice(b"&lt;");
+                }
+                b'\'' if do_esc(char_set, ESCAPE_APOS) => {
+                    r.extend_from_slice(b"&apos;");
+                }
+                b'\"' if do_esc(char_set, ESCAPE_QUOTE) => {
+                    r.extend_from_slice(b"&quot;");
+                }
+                b'>' if do_esc(char_set, ESCAPE_GT) => {
+                    r.extend_from_slice(b"&gt;");
+                }
+                b'\n' if do_esc(char_set, ESCAPE_LF) => {
+                    r.extend_from_slice(b"&#xA;");
+                }
+                b'\r' if do_esc(char_set, ESCAPE_CR) => {
+                    r.extend_from_slice(b"&#xD;");
+                }
+                _ => {
+                    r.push(b);
+                }
             }
         }
     }
@@ -48,19 +59,33 @@ pub fn escape_required(bytes:&[u8], char_set:usize, i:usize, n:usize) -> Option<
     Some(string)
 }
 
-pub fn escape(s:&str, char_set:usize) -> Option<String> {
+pub fn escape(s: &str, char_set: usize) -> Option<String> {
     // Note that s.len is the length in bytes, not in utf8 characters
     let n = s.len();
     let bytes = s.as_bytes();
     for i in 0..n {
         match bytes[i] {
-            b'&'   => { return escape_required(bytes, char_set, i, n); },
-            b'<'   => { return escape_required(bytes, char_set, i, n); },
-            b'\'' if do_esc(char_set, ESCAPE_APOS)  => { return escape_required(bytes, char_set, i, n); },
-            b'\"' if do_esc(char_set, ESCAPE_QUOTE) => { return escape_required(bytes, char_set, i, n); },
-            b'>'  if do_esc(char_set, ESCAPE_GT)    => { return escape_required(bytes, char_set, i, n); },
-            b'\n' if do_esc(char_set, ESCAPE_LF)    => { return escape_required(bytes, char_set, i, n); },
-            b'\r' if do_esc(char_set, ESCAPE_CR)    => { return escape_required(bytes, char_set, i, n); },
+            b'&' => {
+                return escape_required(bytes, char_set, i, n);
+            }
+            b'<' => {
+                return escape_required(bytes, char_set, i, n);
+            }
+            b'\'' if do_esc(char_set, ESCAPE_APOS) => {
+                return escape_required(bytes, char_set, i, n);
+            }
+            b'\"' if do_esc(char_set, ESCAPE_QUOTE) => {
+                return escape_required(bytes, char_set, i, n);
+            }
+            b'>' if do_esc(char_set, ESCAPE_GT) => {
+                return escape_required(bytes, char_set, i, n);
+            }
+            b'\n' if do_esc(char_set, ESCAPE_LF) => {
+                return escape_required(bytes, char_set, i, n);
+            }
+            b'\r' if do_esc(char_set, ESCAPE_CR) => {
+                return escape_required(bytes, char_set, i, n);
+            }
             _ => (),
         }
     }
@@ -68,24 +93,26 @@ pub fn escape(s:&str, char_set:usize) -> Option<String> {
 }
 
 pub struct Entities<'a> {
-    map : HashMap::<&'a [u8], &'a str>,
+    map: HashMap<&'a [u8], &'a str>,
 }
-impl <'a> Entities<'a> {
+impl<'a> Entities<'a> {
     pub fn new() -> Self {
-        Self { map : HashMap::new() }
+        Self {
+            map: HashMap::new(),
+        }
     }
     pub fn xml() -> Self {
-        let mut map : HashMap::<&[u8], &str> = HashMap::new();
-        map.insert(b"amp",   "&");
-        map.insert(b"AMP",   "&");
-        map.insert(b"lt",    "<");
-        map.insert(b"LT",    "<");
-        map.insert(b"gt",    ">");
-        map.insert(b"GT",    ">");
-        map.insert(b"apos",  "'");
-        map.insert(b"APOS",  "'");
-        map.insert(b"quot",  "\"");
-        map.insert(b"QUOT",  "\"");
+        let mut map: HashMap<&[u8], &str> = HashMap::new();
+        map.insert(b"amp", "&");
+        map.insert(b"AMP", "&");
+        map.insert(b"lt", "<");
+        map.insert(b"LT", "<");
+        map.insert(b"gt", ">");
+        map.insert(b"GT", ">");
+        map.insert(b"apos", "'");
+        map.insert(b"APOS", "'");
+        map.insert(b"quot", "\"");
+        map.insert(b"QUOT", "\"");
         Self { map }
     }
     //fp find_span
@@ -109,7 +136,13 @@ impl <'a> Entities<'a> {
     ///
     /// The other possible return value is (n, None, None), indicating
     /// that the span from `i` to `n` contains no entity references
-    fn find_span(&self, inc_map:bool, bytes:&[u8], mut i:usize, n:usize) -> (usize, Option<&str>, Option<char>) {
+    fn find_span(
+        &self,
+        inc_map: bool,
+        bytes: &[u8],
+        mut i: usize,
+        n: usize,
+    ) -> (usize, Option<&str>, Option<char>) {
         if bytes[i] == b'&' {
             i += 1;
             let start = i;
@@ -121,31 +154,33 @@ impl <'a> Entities<'a> {
                 if b == b';' {
                     if inc_map {
                         if let Some(c) = self.map.get(&bytes[start..i]) {
-                            return (i+1, Some(c), None);
+                            return (i + 1, Some(c), None);
                         }
                     }
                     if is_hex || is_dec {
                         use std::convert::TryFrom;
                         if let Ok(c) = char::try_from(value) {
-                            return (i+1, None, Some(c))
+                            return (i + 1, None, Some(c));
                         }
                     }
                     i += 1;
                     break;
                 }
                 if i == start {
-                    if b != b'#' { is_dec = false; }
-                } else if (b >= b'a' && b<=b'f') || (b >= b'A' && b<=b'F') {
-                    value = (value << 4) | (((b & 0xf)+9) as u32);
+                    if b != b'#' {
+                        is_dec = false;
+                    }
+                } else if (b >= b'a' && b <= b'f') || (b >= b'A' && b <= b'F') {
+                    value = (value << 4) | (((b & 0xf) + 9) as u32);
                     is_dec = false;
                 } else if b == b'x' {
-                    if i == start+1 && is_dec {
+                    if i == start + 1 && is_dec {
                         is_hex = true;
                     }
                     is_dec = false;
-                } else if b >= b'0' && b<=b'9' {
+                } else if b >= b'0' && b <= b'9' {
                     if is_dec {
-                        value = (value*10).wrapping_add((b-b'0') as u32);
+                        value = (value * 10).wrapping_add((b - b'0') as u32);
                     } else {
                         value = (value << 4) | ((b & 0xf) as u32);
                     }
@@ -164,7 +199,9 @@ impl <'a> Entities<'a> {
         } else {
             i += 1;
             while i < n {
-                if bytes[i] == b'&' { break; }
+                if bytes[i] == b'&' {
+                    break;
+                }
                 i += 1;
             }
             (i, None, None)
@@ -180,7 +217,15 @@ impl <'a> Entities<'a> {
     /// at `d` there is an entity that ends at `i` which should be replaced with `c`.
     ///
     /// From `i` there may be more entities that require replacement.
-    fn replace_entities_required(&self, inc_map:bool, bytes:&[u8], c:&str, d:usize, mut i:usize, n:usize) -> Option<String> {
+    fn replace_entities_required(
+        &self,
+        inc_map: bool,
+        bytes: &[u8],
+        c: &str,
+        d: usize,
+        mut i: usize,
+        n: usize,
+    ) -> Option<String> {
         let mut r = Vec::with_capacity(n);
         if d > 0 {
             r.extend_from_slice(&bytes[0..d]);
@@ -202,7 +247,7 @@ impl <'a> Entities<'a> {
         let string = unsafe { String::from_utf8_unchecked(r) };
         Some(string)
     }
-    
+
     //fp replace_entities
     /// Replace general entity references and &#..; characters, using the map.
     ///
@@ -237,7 +282,7 @@ impl <'a> Entities<'a> {
     /// numerically (&#38;) or with a general entity
     /// (&amp;).
     ///
-    pub fn replace_entities(&self, inc_map:bool, s:&str) -> Option<String> {
+    pub fn replace_entities(&self, inc_map: bool, s: &str) -> Option<String> {
         // Note that s.len is the length in bytes, not in utf8 characters
         let n = s.len();
         let bytes = s.as_bytes();
@@ -269,35 +314,46 @@ impl <'a> Entities<'a> {
 mod test {
     use super::*;
     // fn check_ok( r:Result<Option<String>>, e:Option<&str> ) {
-    fn check_ok( r:Option<String>, e:Option<&str> ) {
+    fn check_ok(r: Option<String>, e: Option<&str>) {
         // assert!(r.is_ok());
         // let r = r.unwrap();
-        assert_eq!( r, e.map(|s| s.into()) );
+        assert_eq!(r, e.map(|s| s.into()));
     }
     #[test]
     fn test0() {
-        check_ok( escape("fred",ESCAPE_ATTR), None );
-        check_ok( escape("banana",ESCAPE_ATTR), None );
-        check_ok( escape("My < and more",ESCAPE_ATTR), Some("My &lt; and more") );
-        check_ok( escape("My > and less",ESCAPE_ATTR), Some("My &gt; and less") );
-        check_ok( escape("My '\"& etc",ESCAPE_ATTR), Some("My &apos;&quot;&amp; etc") );
-        check_ok( escape("\u{1f600}",ESCAPE_ATTR), None );
-        check_ok( escape("\u{1f600} <",ESCAPE_ATTR), Some("\u{1f600} &lt;") );
-        check_ok( escape("\u{1f600} < \u{1f600} ",ESCAPE_ATTR), Some("\u{1f600} &lt; \u{1f600} ") );
+        check_ok(escape("fred", ESCAPE_ATTR), None);
+        check_ok(escape("banana", ESCAPE_ATTR), None);
+        check_ok(
+            escape("My < and more", ESCAPE_ATTR),
+            Some("My &lt; and more"),
+        );
+        check_ok(
+            escape("My > and less", ESCAPE_ATTR),
+            Some("My &gt; and less"),
+        );
+        check_ok(
+            escape("My '\"& etc", ESCAPE_ATTR),
+            Some("My &apos;&quot;&amp; etc"),
+        );
+        check_ok(escape("\u{1f600}", ESCAPE_ATTR), None);
+        check_ok(escape("\u{1f600} <", ESCAPE_ATTR), Some("\u{1f600} &lt;"));
+        check_ok(
+            escape("\u{1f600} < \u{1f600} ", ESCAPE_ATTR),
+            Some("\u{1f600} &lt; \u{1f600} "),
+        );
     }
     #[test]
     fn test_entities() {
         let e = Entities::xml();
-        check_ok( e.replace_entities(true, "fred"), None );
-        check_ok( e.replace_entities(true, "&amp;&AMP;"), Some("&&") );
-        check_ok( e.replace_entities(true, "&lt;&LT;&GT;&gt;"), Some("<<>>") );
-        check_ok( e.replace_entities(true, "&blob;&QUOT;"), Some("&blob;\"") );
-        check_ok( e.replace_entities(true, "&#xfffffff;"), None );
-        check_ok( e.replace_entities(true, "&#x32;"), Some("2") );
-        check_ok( e.replace_entities(true, "&#32;"), Some(" ") );
-        check_ok( e.replace_entities(true, "&#9999999999999;"), None );
-        check_ok( e.replace_entities(true, "&#x32;&#32;"), Some("2 ") );
-        check_ok( e.replace_entities(true, "&#32;&#x32;"), Some(" 2") );
+        check_ok(e.replace_entities(true, "fred"), None);
+        check_ok(e.replace_entities(true, "&amp;&AMP;"), Some("&&"));
+        check_ok(e.replace_entities(true, "&lt;&LT;&GT;&gt;"), Some("<<>>"));
+        check_ok(e.replace_entities(true, "&blob;&QUOT;"), Some("&blob;\""));
+        check_ok(e.replace_entities(true, "&#xfffffff;"), None);
+        check_ok(e.replace_entities(true, "&#x32;"), Some("2"));
+        check_ok(e.replace_entities(true, "&#32;"), Some(" "));
+        check_ok(e.replace_entities(true, "&#9999999999999;"), None);
+        check_ok(e.replace_entities(true, "&#x32;&#32;"), Some("2 "));
+        check_ok(e.replace_entities(true, "&#32;&#x32;"), Some(" 2"));
     }
-
 }

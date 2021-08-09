@@ -27,22 +27,25 @@ use crate::reader::Position;
 ///
 /// For a simple span type the content
 #[derive(Copy, Clone, Debug)]
-pub struct Span<P:Position> {
-    start : P,
-    end   : P,
+pub struct Span<P: Position> {
+    start: P,
+    end: P,
 }
 
 //ip Span
-impl <P:Position> Span<P> {
+impl<P: Position> Span<P> {
     //fp new_at
     /// Create a new span starting and ending at a position
-    pub fn new_at(posn:&P) -> Self {
-        Self { start:*posn, end:*posn }
+    pub fn new_at(posn: &P) -> Self {
+        Self {
+            start: *posn,
+            end: *posn,
+        }
     }
 
     //cp end_at
     /// Extend self to an end position
-    pub fn end_at(mut self, posn:&P) -> Self {
+    pub fn end_at(mut self, posn: &P) -> Self {
         self.end = *posn;
         self
     }
@@ -63,7 +66,7 @@ impl <P:Position> Span<P> {
 }
 
 //ip Display for Span
-impl <P:Position> std::fmt::Display for Span<P> {
+impl<P: Position> std::fmt::Display for Span<P> {
     //mp fmt
     /// Format for humans
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -72,6 +75,4 @@ impl <P:Position> std::fmt::Display for Span<P> {
 }
 
 //ip crate::markup::Span for Span
-impl <P:Position> crate::markup::Span for Span<P> {
-}
-
+impl<P: Position> crate::markup::Span for Span<P> {}

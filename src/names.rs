@@ -17,17 +17,17 @@ limitations under the License.
  */
 
 //a Imports
+mod attribute;
 mod ids;
+mod name;
 mod namespace;
 mod namespace_stack;
-mod name;
-mod attribute;
 mod tag;
 
 //a Exports
-pub use ids::{NSNameId, NSPrefixId, NSUriId, NSMap};
+pub use attribute::{Attribute, Attributes};
+pub use ids::{NSMap, NSNameId, NSPrefixId, NSUriId};
+pub use name::Name;
 pub use namespace::Namespace;
 pub use namespace_stack::NamespaceStack;
-pub use name::Name;
-pub use attribute::{Attribute, Attributes};
 pub use tag::Tag;

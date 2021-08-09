@@ -17,8 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use crate::names::{Tag, Name, NSNameId};
 use crate::markup::Span;
+use crate::names::{NSNameId, Name, Tag};
 
 //a Content
 //tp ContentType
@@ -72,120 +72,114 @@ pub enum EventType {
 
 //tp Event
 #[derive(Debug)]
-pub enum Event<F:Span> {
+pub enum Event<F: Span> {
     /// The start of the document
     StartDocument {
         /// File position of start of the document
-        span : F,
+        span: F,
         /// Version as an integer - 100 for 1.00, etc
         version: usize,
     },
 
     EndDocument {
         /// File position of end of the document
-        span : F,
+        span: F,
     },
 
     /// Denotes a beginning of an XML element.
     StartElement {
-        span       : F,
-        tag        : Tag, // includes attributes
+        span: F,
+        tag: Tag, // includes attributes
     },
 
     /// Denotes an end of an XML element.
-    EndElement {
-        span       : F,
-        name       : Name,
-    },
+    EndElement { span: F, name: Name },
 
     /// Denotes one part of the content of an element
     Content {
-        span    : F,
-        ctype   : ContentType,
-        data    : String,
+        span: F,
+        ctype: ContentType,
+        data: String,
     },
 
     /// Denotes an XML processing instruction.
     ProcessingInstruction {
-        span     : F,
-        name     : NSNameId,
-        data     : Option<String>,
+        span: F,
+        name: NSNameId,
+        data: Option<String>,
     },
 
     /// Denotes a comment.
-    Comment {
-        span     : F,
-        data     : Vec<String>,
-    },
+    Comment { span: F, data: Vec<String> },
 }
 
 //ip Event
-impl <F:Span> Event<F> {
+impl<F: Span> Event<F> {
     //fp start_document
     /// Create a StartDocument event
-    pub fn start_document(span:F, version:usize) -> Self {
+    pub fn start_document(span: F, version: usize) -> Self {
         Self::StartDocument { span, version }
     }
 
     //fp end_document
     /// Create an EndDocument event
-    pub fn end_document(span:F) -> Self {
+    pub fn end_document(span: F) -> Self {
         Self::EndDocument { span }
     }
 
     //fp start_element
     /// Create a StartElement event with a given [Tag]
-    pub fn start_element(span:F, tag:Tag) -> Self {
+    pub fn start_element(span: F, tag: Tag) -> Self {
         Self::StartElement { span, tag }
     }
-    
+
     //fp end_element
     /// Create an EndElement event with a given [Name]
-    pub fn end_element(span:F, name:Name) -> Self {
+    pub fn end_element(span: F, name: Name) -> Self {
         Self::EndElement { span, name }
     }
 
     //fp comment
     /// Create an event of a vec of comment strings
-    pub fn comment(span:F, data:Vec<String>) -> Self {
+    pub fn comment(span: F, data: Vec<String>) -> Self {
         Self::Comment { span, data }
     }
-    
+
     //fp content
     /// Create an event of content of the given type
-    pub fn content(span:F, ctype:ContentType, data:String) -> Self {
+    pub fn content(span: F, ctype: ContentType, data: String) -> Self {
         Self::Content { span, ctype, data }
     }
 
     //fp content_raw
     /// Create an event of raw content
-    pub fn content_raw(span:F, data:String) -> Self {
-        Self::content(span, ContentType::Raw, data )
+    pub fn content_raw(span: F, data: String) -> Self {
+        Self::content(span, ContentType::Raw, data)
     }
 
     //fp content_int
     /// Create an event of interpretable content
-    pub fn content_int(span:F, data:String) -> Self {
-        Self::content(span, ContentType::Interpretable, data )
+    pub fn content_int(span: F, data: String) -> Self {
+        Self::content(span, ContentType::Interpretable, data)
     }
 
     //fp content_ws
     /// Create an event of whitespace content
-    pub fn content_ws(span:F, data:String) -> Self {
-        Self::content(span, ContentType::Whitespace, data )
+    pub fn content_ws(span: F, data: String) -> Self {
+        Self::content(span, ContentType::Whitespace, data)
     }
 
     //mp get_type
     /// Get the [EventType] corresponding to the [Event]
     pub fn get_type(&self) -> EventType {
         match self {
-            Self::StartDocument {..} => EventType::StartDocument,
-            Self::EndDocument {..} => EventType::EndDocument,
-            Self::StartElement {..} => EventType::StartElement,
-            Self::EndElement {..} => EventType::EndElement,
-            Self::Content {..} => EventType::Content,
-            Self::ProcessingInstruction {..} => EventType::ProcessingInstruction,
-            Self::Comment {..} => EventType::Comment,
+            Self::StartDocument { .. } => EventType::StartDocument,
+            Self::EndDocument { .. } => EventType::EndDocument,
+            Self::StartElement { .. } => EventType::StartElement,
+            Self::EndElement { .. } => EventType::EndElement,
+            Self::Content { .. } => EventType::Content,
+            Self::ProcessingInstruction { .. } => EventType::ProcessingInstruction,
+            Self::Comment { .. } => EventType::Comment,
         }
     }
 
@@ -193,13 +187,13 @@ impl <F:Span> Event<F> {
     /// Borrow the span of the event, for logging or errors etc.
     pub fn borrow_span(&self) -> &F {
         match self {
-            Self::StartDocument {span,..} => span,
-            Self::EndDocument {span,..}   => span,
-            Self::StartElement {span,..}  => span,
-            Self::EndElement {span,..}    => span,
-            Self::Content {span,..}       => span,
-            Self::ProcessingInstruction {span,..} => span,
-            Self::Comment {span,..}       => span,
+            Self::StartDocument { span, .. } => span,
+            Self::EndDocument { span, .. } => span,
+            Self::StartElement { span, .. } => span,
+            Self::EndElement { span, .. } => span,
+            Self::Content { span, .. } => span,
+            Self::ProcessingInstruction { span, .. } => span,
+            Self::Comment { span, .. } => span,
         }
     }
 
@@ -207,40 +201,57 @@ impl <F:Span> Event<F> {
     /// Return Some(version number) if the [Event] is a StartDocument
     /// event; else return None
     pub fn as_start_document(&self) -> Option<usize> {
-        match self { Self::StartDocument{ version, .. } => Some(*version), _ => None }
+        match self {
+            Self::StartDocument { version, .. } => Some(*version),
+            _ => None,
+        }
     }
 
     //mp as_start_element
     /// Return Some(Tag) if the [Event] is a StartElement
     /// event; else return None
     pub fn as_start_element(self) -> Option<Tag> {
-        match self { Self::StartElement{ tag, .. } => Some(tag), _ => None }
+        match self {
+            Self::StartElement { tag, .. } => Some(tag),
+            _ => None,
+        }
     }
 
     //mp as_end_element
     /// Return Some(Name) if the [Event] is an EndElement
     /// event; else return None
     pub fn as_end_element(&self) -> Option<&Name> {
-        match self { Self::EndElement{ name, .. } => Some(name), _ => None }
+        match self {
+            Self::EndElement { name, .. } => Some(name),
+            _ => None,
+        }
     }
 
     //mp as_content
-    /// Return Some(ContentType, string) if the [Event] is a Content 
+    /// Return Some(ContentType, string) if the [Event] is a Content
     /// event; else return None
     pub fn as_content(&self) -> Option<(ContentType, &str)> {
-        match self { Self::Content{ ctype, data, .. } => Some((*ctype, data)), _ => None }
+        match self {
+            Self::Content { ctype, data, .. } => Some((*ctype, data)),
+            _ => None,
+        }
     }
 
     //mp is_start_document
     /// Return true if the Event is a StartDocument event
     pub fn is_start_document(&self) -> bool {
-        match self { Self::StartDocument{ .. } => true, _ => false }
+        match self {
+            Self::StartDocument { .. } => true,
+            _ => false,
+        }
     }
 
     //mp is_end_document
     /// Return true if the Event is an EndDocument event
     pub fn is_end_document(&self) -> bool {
-        match self { Self::EndDocument{ .. } => true, _ => false }
+        match self {
+            Self::EndDocument { .. } => true,
+            _ => false,
+        }
     }
 }
-

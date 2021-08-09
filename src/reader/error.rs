@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use super::{Reader, Position, Span, Error};
+use super::{Error, Position, Reader, Span};
 
 //a Result
 //tp Result
@@ -32,7 +32,9 @@ pub type Result<T, P, E> = std::result::Result<T, ReaderError<P, E>>;
 /// set of bytes.
 #[derive(Debug)]
 pub enum ReaderError<P, E>
-where P:Position, E:Error<Position = P>
+where
+    P: Position,
+    E: Error<Position = P>,
 {
     /// An error from the underlying reader
     ReaderError(Span<P>, E),
@@ -55,45 +57,48 @@ where P:Position, E:Error<Position = P>
 }
 
 //ip ReaderError
-impl <P, E> ReaderError<P, E>
-where P:Position, E:Error<Position = P>
+impl<P, E> ReaderError<P, E>
+where
+    P: Position,
+    E: Error<Position = P>,
 {
-    pub fn of_reader<T, R>(reader:&R, reader_error:E) -> Result<T, P, E>
-    where R:Reader<Position = P, Error = E>
+    pub fn of_reader<T, R>(reader: &R, reader_error: E) -> Result<T, P, E>
+    where
+        R: Reader<Position = P, Error = E>,
     {
         let span = Span::new_at(reader.borrow_pos());
         Err(Self::ReaderError(span, reader_error))
     }
-    pub fn unexpected_eof<T>(start:&P, end:&P) -> Result<T, P, E> {
+    pub fn unexpected_eof<T>(start: &P, end: &P) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::UnexpectedEOF(span))
     }
-    pub fn unexpected_character<T>(start:&P, end:&P, ch:char) -> Result<T, P, E> {
+    pub fn unexpected_character<T>(start: &P, end: &P, ch: char) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::UnexpectedCharacter(span, ch))
     }
-    pub fn unexpected_newline_in_string<T>(start:&P, end:&P) -> Result<T, P, E> {
+    pub fn unexpected_newline_in_string<T>(start: &P, end: &P) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::UnexpectedNewlineInQuotedString(span))
     }
-    pub fn expected_equals<T>(start:&P, end:&P, ch:char) -> Result<T, P, E> {
+    pub fn expected_equals<T>(start: &P, end: &P, ch: char) -> Result<T, P, E> {
         let span = Span::new_at(start).end_at(end);
         Err(Self::ExpectedEquals(span, ch))
     }
-    pub fn no_more_events<T>() -> Result<T, P, E>{
+    pub fn no_more_events<T>() -> Result<T, P, E> {
         Err(Self::BeyondEndOfTokens)
     }
-    pub fn unexpected_tag_indent<T>(span:Span<P>, depth:usize) -> Result<T, P, E> {
+    pub fn unexpected_tag_indent<T>(span: Span<P>, depth: usize) -> Result<T, P, E> {
         Err(Self::UnexpectedTagIndent(span, depth))
     }
-    pub fn unexpected_attribute<T>(span:Span<P>, prefx:&str, name:&str) -> Result<T, P, E> {
+    pub fn unexpected_attribute<T>(span: Span<P>, prefx: &str, name: &str) -> Result<T, P, E> {
         let name = format!("{}:{}", prefx, name);
         Err(Self::UnexpectedAttribute(span, name))
     }
-    pub fn of_markup_error(span:Span<P>, e:crate::markup::Error) -> Self {
+    pub fn of_markup_error(span: Span<P>, e: crate::markup::Error) -> Self {
         Self::MarkupError(span, e)
     }
-    pub fn of_markup_result<T>(span:Span<P>, r:crate::markup::Result<T>) -> Result<T, P, E> {
+    pub fn of_markup_result<T>(span: Span<P>, r: crate::markup::Result<T>) -> Result<T, P, E> {
         match r {
             Ok(t) => Ok(t),
             Err(e) => Err(Self::of_markup_error(span, e)),
@@ -101,8 +106,10 @@ where P:Position, E:Error<Position = P>
     }
 }
 
-impl <P, E> Error for ReaderError<P, E>
-where P:Position, E:Error<Position = P>
+impl<P, E> Error for ReaderError<P, E>
+where
+    P: Position,
+    E: Error<Position = P>,
 {
     type Position = P;
     /// Write the error without the span
@@ -110,21 +117,27 @@ where P:Position, E:Error<Position = P>
         match self {
             Self::ReaderError(_, err) => err.write_without_span(f),
             Self::MarkupError(_, err) => write!(f, "{}", err),
-            Self::UnexpectedCharacter(_, ch)    => write!(f, "Unexpected character '{}'", ch),
-            Self::UnexpectedTagIndent(_, depth) => write!(f, "Expected a tag indent of at most {}", depth),
-            Self::UnexpectedAttribute(_, name)  => write!(f, "Found attribute when not expected {}", name),
+            Self::UnexpectedCharacter(_, ch) => write!(f, "Unexpected character '{}'", ch),
+            Self::UnexpectedTagIndent(_, depth) => {
+                write!(f, "Expected a tag indent of at most {}", depth)
+            }
+            Self::UnexpectedAttribute(_, name) => {
+                write!(f, "Found attribute when not expected {}", name)
+            }
             Self::UnexpectedEOF(_) => write!(f, "Unexpected end-of-file"),
-            Self::UnexpectedNewlineInQuotedString(_) => write!(f, "Unexpected newline in quoted string"),
-            Self::ExpectedEquals(_, ch) => write!(f,"Expected '=' but found '{}'", ch),
-            Self::BeyondEndOfTokens => write!(f, "Attempt to parse beyond end of tokens, probably a bug"),
+            Self::UnexpectedNewlineInQuotedString(_) => {
+                write!(f, "Unexpected newline in quoted string")
+            }
+            Self::ExpectedEquals(_, ch) => write!(f, "Expected '=' but found '{}'", ch),
+            Self::BeyondEndOfTokens => {
+                write!(f, "Attempt to parse beyond end of tokens, probably a bug")
+            }
         }
     }
     /// Borrow a span if it has one
     fn borrow_span(&self) -> Option<&Span<Self::Position>> {
         match self {
-            Self::ReaderError(span, e) => {
-                e.borrow_span().or(Some(span))
-            },
+            Self::ReaderError(span, e) => e.borrow_span().or(Some(span)),
             Self::MarkupError(span, _) => Some(span),
             Self::UnexpectedCharacter(span, _) => Some(span),
             Self::UnexpectedTagIndent(span, _) => Some(span),
@@ -138,8 +151,10 @@ where P:Position, E:Error<Position = P>
 }
 
 //ip std::fmt::Display for ReaderError
-impl <P, E> std::fmt::Display for ReaderError<P, E>
-where P:Position, E:Error<Position = P>
+impl<P, E> std::fmt::Display for ReaderError<P, E>
+where
+    P: Position,
+    E: Error<Position = P>,
 {
     //mp fmt - format a `Error` for display
     /// Display the `Error` in a human-readable form
@@ -154,12 +169,14 @@ where P:Position, E:Error<Position = P>
 }
 
 //ip std::error::Error for ReaderError
-impl <P, E> std::error::Error for ReaderError<P, E>
-where P:Position, E:Error<Position = P>
+impl<P, E> std::error::Error for ReaderError<P, E>
+where
+    P: Position,
+    E: Error<Position = P>,
 {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::ReaderError(_,e) => Some(e),
+            Self::ReaderError(_, e) => Some(e),
             _ => None,
         }
     }

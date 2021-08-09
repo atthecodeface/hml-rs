@@ -30,22 +30,27 @@ pub struct Attribute {
     pub name: Name,
 
     /// Attribute value.
-    pub value: String
+    pub value: String,
 }
 
 impl Attribute {
     //fp new
     /// Create a new [Attribute] using the [NamespaceStack] to resolve the name
-    pub fn new(ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> crate::markup::Result<Self> {
+    pub fn new(
+        ns_stack: &mut NamespaceStack,
+        prefix: &str,
+        name: &str,
+        value: String,
+    ) -> crate::markup::Result<Self> {
         if ns_stack.uses_xmlns() {
             if prefix == "" && name == "xmlns" {
-                println!("Add ns '' to be {}",value);
-                ns_stack.add_ns( "", &value );
+                println!("Add ns '' to be {}", value);
+                ns_stack.add_ns("", &value);
                 let name = Name::new(ns_stack, name, name)?;
                 return Ok(Self { name, value });
             } else if prefix == "xmlns" {
                 println!("Add ns {} to be value {}", name, value);
-                ns_stack.add_ns( name, &value );
+                ns_stack.add_ns(name, &value);
             }
         }
         let name = Name::new(ns_stack, prefix, name)?;
@@ -60,30 +65,39 @@ impl Attribute {
 #[derive(Debug)]
 pub struct Attributes {
     //
-    attributes: Vec<Attribute>
+    attributes: Vec<Attribute>,
 }
 
 //ip Attributes
 impl Attributes {
     //fp new
     pub fn new() -> Self {
-        Self { attributes : Vec::new() }
+        Self {
+            attributes: Vec::new(),
+        }
     }
     //mp is_empty
     pub fn is_empty(&self) -> bool {
         self.attributes.is_empty()
     }
-    pub fn add(&mut self, ns_stack:&mut NamespaceStack, prefix:&str, name:&str, value:String) -> crate::markup::Result<()> {
-        self.attributes.push(Attribute::new(ns_stack, prefix, name, value)?);
+    pub fn add(
+        &mut self,
+        ns_stack: &mut NamespaceStack,
+        prefix: &str,
+        name: &str,
+        value: String,
+    ) -> crate::markup::Result<()> {
+        self.attributes
+            .push(Attribute::new(ns_stack, prefix, name, value)?);
         Ok(())
     }
-    pub fn steal(&mut self, v:&mut Self) {
+    pub fn steal(&mut self, v: &mut Self) {
         self.attributes.append(&mut v.attributes);
     }
-    pub fn take(self) -> Vec<Attribute>  {
+    pub fn take(self) -> Vec<Attribute> {
         self.attributes
     }
-    pub fn borrow(&self) -> &Vec<Attribute>  {
+    pub fn borrow(&self) -> &Vec<Attribute> {
         &self.attributes
     }
 }

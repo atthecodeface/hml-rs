@@ -49,29 +49,36 @@ limitations under the License.
 //!
 
 //a Imports
-use crate::reader::{Reader, Position, Character};
+use super::Token;
+use crate::reader::{Character, Position, Reader};
 use crate::reader::{ReaderError, Span};
-use super::{Token};
 type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Utils
 //fp is_quote
 /// Returns true if the UTF character is either a single or double quote
 #[inline]
-fn is_newline(ch:char) -> bool { ch == '\n' }
+fn is_newline(ch: char) -> bool {
+    ch == '\n'
+}
 #[inline]
-fn is_hash(ch:char) -> bool { ch == '#' }
+fn is_hash(ch: char) -> bool {
+    ch == '#'
+}
 #[inline]
-pub fn is_quote(ch:char) -> bool { ch=='"' || ch=='\'' }
+pub fn is_quote(ch: char) -> bool {
+    ch == '"' || ch == '\''
+}
 
 //fp is_name_start
 /// Returns true if the UTF character is a colon, underscore, alphabetic, or UTF name character
-pub fn is_name_start(ch:char) -> bool {
+pub fn is_name_start(ch: char) -> bool {
     let ch = ch as u32;
     match ch {
         // ?? 58 => {true}, // colon
-        95 => {true}, // underscore
-        _  => { ((ch>=65) && (ch<=90))       ||    // A-Z
+        95 => true, // underscore
+        _ => {
+            ((ch>=65) && (ch<=90))       ||    // A-Z
                     ((ch>=97) && (ch<=122))     ||   // a-z
                     ((ch>=0xc0) && (ch<=0xd6)) ||
                     ((ch>=0xd8) && (ch<=0xf6)) ||
@@ -84,7 +91,8 @@ pub fn is_name_start(ch:char) -> bool {
                     ((ch>=0x3001) && (ch<=0xd7ff)) ||
                     ((ch>=0xf900) && (ch<=0xfdcf)) ||
                     ((ch>=0xfdf0) && (ch<=0xfffd)) ||
-                    ((ch>=0x10000) && (ch<=0xeffff))  }
+                    ((ch>=0x10000) && (ch<=0xeffff))
+        }
     }
 }
 
@@ -92,7 +100,7 @@ pub fn is_name_start(ch:char) -> bool {
 /// Returns true if the UTF character is a name character or a
 /// continuation of a name character that adds -, ., digits, and other
 /// UTF characters
-pub fn is_name(ch:char) -> bool {
+pub fn is_name(ch: char) -> bool {
     if is_name_start(ch) {
         true
     } else {
@@ -104,21 +112,19 @@ pub fn is_name(ch:char) -> bool {
     }
 }
 
-
 //a Lexer
 /// `Lexer` is a tokenizer for HMLH documents
 ///
 /// Main method is `next_token` which accepts an `Read` instance
 ///
 //tp Lexer
-pub struct Lexer<R:Reader> {
-    read_ahead : Option<R::Char>,
+pub struct Lexer<R: Reader> {
+    read_ahead: Option<R::Char>,
     token_start: R::Position,
 }
 
 //ip Lexer
-impl <R:Reader> Lexer<R> {
-
+impl<R: Reader> Lexer<R> {
     //fp new -
     /// Returns a new lexer with default state.
     pub fn new() -> Self {
@@ -130,74 +136,75 @@ impl <R:Reader> Lexer<R> {
 
     //mi peek_char - peek at the next character
     /// Peek character
-    fn peek_char(&mut self, reader:&mut R) -> Result<R, R::Char> {
+    fn peek_char(&mut self, reader: &mut R) -> Result<R, R::Char> {
         match self.read_ahead {
-            Some(x) => {
-                Ok(x)
-            },
-            None => {
-                match reader.next_char() {
-                    Ok(ch) => {
-                        self.read_ahead = Some(ch);
-                        Ok(ch)
-                    }
-                    Err(e) => ReaderError::of_reader(reader, e)
+            Some(x) => Ok(x),
+            None => match reader.next_char() {
+                Ok(ch) => {
+                    self.read_ahead = Some(ch);
+                    Ok(ch)
                 }
+                Err(e) => ReaderError::of_reader(reader, e),
             },
         }
     }
 
     //mi peek_char_no_eof - peek at the next character, with an error if it is EOF
     /// Peek character - EOF not permitted
-    fn peek_char_no_eof(&mut self, reader:&mut R) -> Result<R, char> {
+    fn peek_char_no_eof(&mut self, reader: &mut R) -> Result<R, char> {
         let ch = self.peek_char(reader)?;
         if let Some(ch) = ch.as_char() {
             Ok(ch)
-        } else { // assume eof for now
+        } else {
+            // assume eof for now
             self.unexpected_eof(reader)
         }
     }
 
+    //mi drop_peek
+    /// Drop the peeked character
+    fn drop_peek(&mut self) {
+        assert!(self.read_ahead.is_some());
+        self.read_ahead = None;
+    }
+
     //mi get_char - get the next character
     /// Get character
-    fn get_char(&mut self, reader:&mut R) -> Result<R, R::Char> {
+    fn get_char(&mut self, reader: &mut R) -> Result<R, R::Char> {
         match self.read_ahead {
             Some(x) => {
                 self.read_ahead = None;
                 Ok(x)
             }
-            None => {
-                match reader.next_char() {
-                    Ok(ch) => {
-                        Ok(ch)
-                    }
-                    Err(e) => ReaderError::of_reader(reader, e)
-                }
-            }
+            None => match reader.next_char() {
+                Ok(ch) => Ok(ch),
+                Err(e) => ReaderError::of_reader(reader, e),
+            },
         }
     }
 
-    //mi get_char - get the next character, with an error if it is EOF
+    //mi get_char_no_eof - get the next character, with an error if it is EOF
     /// Get character - EOF not permitted
-    fn get_char_no_eof(&mut self, reader:&mut R) -> Result<R, char> {
+    fn get_char_no_eof(&mut self, reader: &mut R) -> Result<R, char> {
         let ch = self.get_char(reader)?;
         if let Some(ch) = ch.as_char() {
             Ok(ch)
-        } else { // assume eof for now
+        } else {
+            // assume eof for now
             self.unexpected_eof(reader)
         }
     }
 
     //mi unget_char - return a character to the (single char) readahead buffer
     /// Unget a character - put it into the readahead
-    fn unget_char(&mut self, char:R::Char) -> () {
+    fn unget_char(&mut self, char: R::Char) -> () {
         self.read_ahead = Some(char);
     }
 
     //mi skip_whitespace - get up to first non-whitespace character
     /// Read characters until EOF or non-whitespace
     /// If non-whitespace, then unget it back into the readahead
-    fn skip_whitespace(&mut self, reader:&mut R) -> Result<R, ()> {
+    fn skip_whitespace(&mut self, reader: &mut R) -> Result<R, ()> {
         loop {
             let ch = self.get_char(reader)?;
             if let Some(c) = ch.as_char() {
@@ -215,7 +222,7 @@ impl <R:Reader> Lexer<R> {
 
     //mi read_line - read up to newline, for (e.g.) comments
     /// Read the string from the current char to a newline, leaving that out
-    fn read_line(&mut self, reader:&mut R) -> Result<R, String> {
+    fn read_line(&mut self, reader: &mut R) -> Result<R, String> {
         let mut s = String::new();
         loop {
             let ch = self.get_char(reader)?;
@@ -240,7 +247,7 @@ impl <R:Reader> Lexer<R> {
     /// Can return an IO error from the underlying stream, or a UTF-8 encoding error.
     ///
     /// Additionally it may return an error for characters that are illegal within the token stream
-    pub fn next_token(&mut self, reader:&mut R) -> Result<R, Token<R::Position>> {
+    pub fn next_token(&mut self, reader: &mut R) -> Result<R, Token<R::Position>> {
         self.skip_whitespace(reader)?;
         self.token_start = *reader.borrow_pos();
         let ch = self.peek_char(reader)?;
@@ -263,7 +270,7 @@ impl <R:Reader> Lexer<R> {
                 let hash_count = self.read_hash_sequence(reader)?;
                 let ch = self.peek_char(reader)?.as_char().unwrap();
                 if is_quote(ch) {
-                    let ch = self.get_char_no_eof(reader)?;
+                    self.drop_peek();
                     let s = self.read_quoted_string(reader, ch, hash_count, false)?;
                     span = span.end_at(reader.borrow_pos());
                     return Ok(Token::characters(span, s));
@@ -271,18 +278,18 @@ impl <R:Reader> Lexer<R> {
                     return self.read_tag(reader, span, hash_count);
                 }
             } else if is_quote(ch) {
-                let ch = self.get_char_no_eof(reader)?;
+                self.drop_peek();
                 let s = self.read_quoted_string(reader, ch, 0, false)?;
                 span = span.end_at(reader.borrow_pos());
                 return Ok(Token::characters(span, s));
             } else if ch == 'r' {
-                let ch = self.get_char_no_eof(reader)?;
+                self.drop_peek();
                 if let Some(ch) = self.peek_char(reader)?.as_char() {
                     if is_hash(ch) {
                         let hash_count = self.read_hash_sequence(reader)?;
                         let ch = self.peek_char(reader)?.as_char().unwrap();
                         if is_quote(ch) {
-                            let ch = self.get_char_no_eof(reader)?;
+                            self.drop_peek();
                             let s = self.read_quoted_string(reader, ch, hash_count, true)?;
                             span = span.end_at(reader.borrow_pos());
                             return Ok(Token::raw_characters(span, s));
@@ -290,7 +297,7 @@ impl <R:Reader> Lexer<R> {
                             return self.unexpected_character(reader, ch);
                         }
                     } else if is_quote(ch) {
-                        let ch = self.get_char_no_eof(reader)?;
+                        self.drop_peek();
                         let s = self.read_quoted_string(reader, ch, 0, true)?;
                         span = span.end_at(reader.borrow_pos());
                         return Ok(Token::raw_characters(span, s));
@@ -307,28 +314,28 @@ impl <R:Reader> Lexer<R> {
     }
 
     //mi unexpected_eof
-    fn unexpected_eof<T> (&self, reader:&R) -> Result<R, T> {
+    fn unexpected_eof<T>(&self, reader: &R) -> Result<R, T> {
         ReaderError::unexpected_eof(&self.token_start, reader.borrow_pos())
     }
 
     //mi unexpected_character
-    fn unexpected_character<T> (&self, reader:&R, ch:char) -> Result<R, T> {
+    fn unexpected_character<T>(&self, reader: &R, ch: char) -> Result<R, T> {
         ReaderError::unexpected_character(&self.token_start, reader.borrow_pos(), ch)
     }
 
     //mi unexpected_newline_in_string
-    fn unexpected_newline_in_string<T> (&self, reader:&R) -> Result<R, T> {
+    fn unexpected_newline_in_string<T>(&self, reader: &R) -> Result<R, T> {
         ReaderError::unexpected_newline_in_string(&self.token_start, reader.borrow_pos())
     }
 
     //mi expected_equals
-    fn expected_equals<T> (&self, reader:&R, ch:char) -> Result<R, T> {
+    fn expected_equals<T>(&self, reader: &R, ch: char) -> Result<R, T> {
         ReaderError::expected_equals(&self.token_start, reader.borrow_pos(), ch)
     }
 
     //mi read_name - read a name, cursor should be pointing at a is_name_start character
     // at end, cursor pointing at first non-name character or EOF
-    fn read_name(&mut self, reader:&mut R, initial_ch:Option<char>) -> Result<R, String> {
+    fn read_name(&mut self, reader: &mut R, initial_ch: Option<char>) -> Result<R, String> {
         let mut s = String::new();
         let ch = {
             if let Some(ch) = initial_ch {
@@ -360,29 +367,33 @@ impl <R:Reader> Lexer<R> {
     //mi read_namespace_name
     /// initial_ch is Some(first character) or None if reader pointing
     /// at first character of name
-    fn read_namespace_name(&mut self, reader:&mut R, initial_ch:Option<char>) -> Result<R, (String,String)> {
+    fn read_namespace_name(
+        &mut self,
+        reader: &mut R,
+        initial_ch: Option<char>,
+    ) -> Result<R, (String, String)> {
         let name = self.read_name(reader, initial_ch)?;
         let ch = self.peek_char(reader)?;
         match ch.as_char() {
             Some(':') => {
-                self.get_char(reader)?;
+                self.drop_peek();
                 let name2 = self.read_name(reader, None)?;
                 Ok((name, name2))
-            },
-            _ => {
-                Ok(("".into(), name))
-            },
+            }
+            _ => Ok(("".into(), name)),
         }
     }
 
     //mi read_hash_sequence - read a sequence of # characters and return its length
-    fn read_hash_sequence(&mut self, reader:&mut R) -> Result<R, usize> {
+    fn read_hash_sequence(&mut self, reader: &mut R) -> Result<R, usize> {
         let mut hash_count = 0;
         loop {
             let ch = self.peek_char_no_eof(reader)?;
-            if !is_hash(ch) { break; }
+            if !is_hash(ch) {
+                break;
+            }
             hash_count += 1;
-            self.get_char(reader)?;
+            self.drop_peek();
         }
         Ok(hash_count)
     }
@@ -395,24 +406,29 @@ impl <R:Reader> Lexer<R> {
     ///
     /// The result is a TagOpen or TagClose, with the depth set to the number of '#'s
     /// at the front of the tag, and the namespace_name set appropriately
-    fn read_tag(&mut self, reader:&mut R, mut span:Span<R::Position>, hash_count:usize) -> Result<R, Token<R::Position>> {
+    fn read_tag(
+        &mut self,
+        reader: &mut R,
+        mut span: Span<R::Position>,
+        hash_count: usize,
+    ) -> Result<R, Token<R::Position>> {
         let (ns, name) = self.read_namespace_name(reader, None)?;
         let result = {
             match self.peek_char(reader)?.as_char() {
                 Some('{') => {
-                    self.get_char(reader)?;
+                    self.drop_peek();
                     span = span.end_at(reader.borrow_pos());
                     Token::open_boxed(span, ns, name, hash_count)
-                },
+                }
                 Some('}') => {
-                    self.get_char(reader)?;
+                    self.drop_peek();
                     span = span.end_at(reader.borrow_pos());
                     Token::close(span, ns, name, hash_count)
-                },
+                }
                 _ => {
                     span = span.end_at(reader.borrow_pos());
                     Token::open(span, ns, name, hash_count)
-                },
+                }
             }
         };
         match self.peek_char(reader)?.as_char() {
@@ -422,7 +438,7 @@ impl <R:Reader> Lexer<R> {
                 } else {
                     self.unexpected_character(reader, ch)
                 }
-            },
+            }
             _ => Ok(result),
         }
     }
@@ -433,10 +449,10 @@ impl <R:Reader> Lexer<R> {
     /// The string must start with a quote character or a different non-whitespace character
     /// If it starts with a non-whitespace character then the string goes up to EOF or or whitespace
     /// If it starts with a quote character then it is a quoted string
-    pub fn read_string(&mut self, reader:&mut R) -> Result<R, String> {
+    pub fn read_string(&mut self, reader: &mut R) -> Result<R, String> {
         let ch = self.peek_char_no_eof(reader)?;
         if is_quote(ch) {
-            let ch = self.get_char_no_eof(reader)?;
+            self.drop_peek();
             self.read_quoted_string(reader, ch, 0, false)
         } else {
             let mut result = String::new();
@@ -451,10 +467,10 @@ impl <R:Reader> Lexer<R> {
                             result.push(c);
                         }
                     }
-                    _  => {
+                    _ => {
                         self.unget_char(ch);
                         break;
-                    },
+                    }
                 }
             }
             Ok(result)
@@ -463,8 +479,14 @@ impl <R:Reader> Lexer<R> {
 
     //mi read_quoted_string
     /// reads a quoted string, given the stream cursor is pointing at the opening quote character
-    /// 
-    pub fn read_quoted_string(&mut self, reader:&mut R, quote_ch:char, hash_count:usize, _raw:bool) -> Result<R, String> {
+    ///
+    pub fn read_quoted_string(
+        &mut self,
+        reader: &mut R,
+        quote_ch: char,
+        hash_count: usize,
+        _raw: bool,
+    ) -> Result<R, String> {
         let mut result = String::new();
         let mut ch = self.get_char_no_eof(reader)?;
         loop {
@@ -479,7 +501,9 @@ impl <R:Reader> Lexer<R> {
             let mut i = 0;
             while i < hash_count {
                 ch = self.get_char_no_eof(reader)?;
-                if ch != '#' {break;}
+                if ch != '#' {
+                    break;
+                }
                 i += 1;
             }
             if i == hash_count {
@@ -495,9 +519,14 @@ impl <R:Reader> Lexer<R> {
 
     //mi read_attribute
     // Stream is pointing at first character of attribute
-    fn read_attribute(&mut self, reader:&mut R, mut span:Span<R::Position>, initial_ch:Option<char>) -> Result<R, Token<R::Position>> {
+    fn read_attribute(
+        &mut self,
+        reader: &mut R,
+        mut span: Span<R::Position>,
+        initial_ch: Option<char>,
+    ) -> Result<R, Token<R::Position>> {
         let (ns, name) = self.read_namespace_name(reader, initial_ch)?;
-        let ch   = self.get_char_no_eof(reader)?;
+        let ch = self.get_char_no_eof(reader)?;
         if ch != '=' {
             return self.expected_equals(reader, ch);
         }
