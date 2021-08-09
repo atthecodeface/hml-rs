@@ -28,7 +28,13 @@ limitations under the License.
 //!
 //! Note that XML does not support comments containing '--', nor those ending with a single '-'.
 //!
-//! quoted strings - want " -> ", r" -> ", ###" -> "###, and r####" -> "####; no newlines if no #; raw means don't interpret ampersands nor handle escapes (CDATA)
+//! quoted strings - want " -> ", r" -> ", ###" -> "###, and r####" -> "####; no newlines if no #; raw means don't unescape
+//!
+//! QuotedString :=   '"'     <EscapedContent without newlines> '"'
+//!               |  'r"'     <Content without newlines> '"'
+//!               |  '#"{M}'  <EscapedContent> '"{M}#'
+//!               |  'r#"{M}' <Content> '"{M}#'
+//!
 //!
 //! whitespace is a quoted string that is just whitespace
 //!

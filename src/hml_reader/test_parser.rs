@@ -1,8 +1,26 @@
+/*a Copyright
 
-//a Test
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    test_parser.rs
+@brief   Parser test routines
+ */
+
+//a Test infrastructure
 #[cfg(test)]
 #[allow(dead_code)]
-mod tests {
+mod test_infrastructure {
+    //a Imports
     use crate::names::{Namespace, NamespaceStack, Tag, Name};
     use crate::reader::{ReaderError};
     use crate::hml_reader::{Parser, Lexer};
@@ -10,23 +28,35 @@ mod tests {
     use crate::string::Position as StringPosition;
     use crate::string::Error as StringError;
     type Event = crate::markup::Event<crate::reader::Span<StringPosition>>;
+
+    //a Expectation
+    //tp Expectation
     #[derive(Debug)]
-    enum Expectation<'a> {
+    pub enum Expectation<'a> {
         StD(usize),
         StE(&'a str, &'a str, &'a [(&'a str, &'a str, &'a str)]),
+        Content,
         EndE,
         EndD,
         Ignore,
     }
-    struct ExpectationState<'a> {
+
+    //tp ExpectationState
+    pub struct ExpectationState<'a> {
         expectations : &'a [ Expectation<'a> ],
         index : usize,
         stack : Vec<Name>,
     }
+
+    //ip ExpectationState
     impl <'a> ExpectationState<'a> {
+
+        //fp new
         fn new(expectations:&'a [Expectation <'a>]) -> Self {
             Self { expectations, index:0, stack:Vec::new() }
         }
+
+        //fp match_open
         fn match_open(&mut self, ns_stack:&NamespaceStack, tag:Tag, uri:&str, name:&str, attrs:&[(&str, &str, &str)]) -> bool {
             if ns_stack.borrow_name(tag.name.name) != name {
                 false
@@ -48,6 +78,8 @@ mod tests {
                 }
             }
         }
+
+        //fp match_close
         fn match_close(&mut self, _ns_stack:&NamespaceStack, name:&Name ) -> bool {
             if let Some(stack_name) = self.stack.pop() {
                 if *name == stack_name {
@@ -59,6 +91,8 @@ mod tests {
                 false
             }
         }
+
+        //fp check_expectation
         fn check_expectation(&mut self, ns_stack:&NamespaceStack, t:Result<Event, ReaderError<StringPosition, StringError>>) -> Result<(), String> {
             self.index += 1;
             if self.index > self.expectations.len() {
@@ -104,6 +138,22 @@ mod tests {
                           }
                         )
                     }
+                    Expectation::Content => {
+                        ( format!("Expected a Content got {:?}", t),
+                          if t.is_err() {
+                              false
+                          } else {
+                              let t = t.unwrap();
+                              true
+                              /*if let Some(name) = t.as_end_element() {
+                                  self.match_close(ns_stack, name)
+                              } else {
+                                  false
+                              }
+*/
+                          }
+                        )
+                    }
                     Expectation::Ignore => {
                         ( String::new(), true )
                     },
@@ -117,7 +167,9 @@ mod tests {
         }
     }
 
-    fn test_string(s:&str, exp:&[Expectation]) {
+    //a Functions for test
+    //fp test_string
+    pub fn test_string(s:&str, exp:&[Expectation]) {
         let mut expectation = ExpectationState::new(exp);
         let mut namespace = Namespace::new(true);
         let mut namespace_stack = NamespaceStack::new(&mut namespace);
@@ -141,9 +193,21 @@ mod tests {
         }
         assert!(errors.is_empty());
     }
+    
+    //zz All done
+}
+
+//a Tests
+#[cfg(test)]
+#[allow(dead_code)]
+mod tests {
+    //a Imports from test_infrastructure
+    use super::test_infrastructure::{test_string};
+    use super::test_infrastructure::Expectation::{StD, EndD, StE, EndE, Content};
+
+    //a Structure tests
     #[test]
-    fn test_blah() {
-        use Expectation::*;
+    fn test_structure() {
         test_string( "#svg ##line ##text",
                        &[StD(100),
                              StE("", "svg", &[]),
@@ -156,8 +220,7 @@ mod tests {
                        ] );
     }
     #[test]
-    fn test_blah2() {
-        use Expectation::*;
+    fn test_structure2() {
         test_string( "#svg ##box{ ##box}",
                        &[StD(100),
                              StE("", "svg", &[]),
@@ -168,8 +231,7 @@ mod tests {
                        ] );
     }
     #[test]
-    fn test_blah3() {
-        use Expectation::*;
+    fn test_structure3() {
         test_string( "#svg ##box{ #line ##box}",
                        &[StD(100),
                              StE("", "svg", &[]),
@@ -182,8 +244,7 @@ mod tests {
                        ] );
     }
     #[test]
-    fn test_blah4() {
-        use Expectation::*;
+    fn test_structure4() {
         test_string( "#svg ##box{ #line #line ##box}",
                        &[StD(100),
                              StE("", "svg", &[]),
@@ -198,8 +259,7 @@ mod tests {
                        ] );
     }
     #[test]
-    fn test_blah5() {
-        use Expectation::*;
+    fn test_structure5() {
         test_string( "#svg ##box{ #innerbox{ #line #innerbox} ##box}",
                        &[StD(100),
                              StE("", "svg", &[]),
@@ -213,9 +273,10 @@ mod tests {
                              EndD
                        ] );
     }
+
+    //a Attribute tests
     #[test]
     fn test_attr1() {
-        use Expectation::*;
         test_string( "#svg a='1' ##line b='2'",
                        &[StD(100),
                              StE("", "svg",  &[ ("", "a", "1"), ]),
@@ -227,7 +288,6 @@ mod tests {
     }
     #[test]
     fn test_attr2() {
-        use Expectation::*;
         test_string( "#svg a='1' b='2' ##line ",
                        &[StD(100),
                              StE("", "svg",  &[ ("", "a", "1"), ("", "b", "2"), ]),
@@ -239,7 +299,6 @@ mod tests {
     }
     #[test]
     fn test_attr3() {
-        use Expectation::*;
         test_string( "#svg ##box{ a='1' b='2' ##box} ##line ",
                        &[StD(100),
                              StE("", "svg",  &[ ]),
@@ -251,9 +310,10 @@ mod tests {
                              EndD
                        ] );
     }
+
+    //a Namespace tests
     #[test]
     fn test_ns() {
-        use Expectation::*;
         test_string( "#svg ##box{ xmlns='https://fred' ##box} ##line ",
                        &[StD(100),
                              StE("", "svg",  &[ ]),
@@ -267,7 +327,6 @@ mod tests {
     }
     #[test]
     fn test_ns2() {
-        use Expectation::*;
         test_string( "#svg ##box{ xmlns='https://fred' b='2' ##box} ##line ",
                        &[StD(100),
                              StE("", "svg",  &[ ]),
@@ -281,7 +340,6 @@ mod tests {
     }
     #[test]
     fn test_ns3() {
-        use Expectation::*;
         test_string( "#svg ##box{ xmlns:blob='https://fred' b='2' ##box} ##line ",
                        &[StD(100),
                              StE("", "svg",  &[ ]),
@@ -291,6 +349,17 @@ mod tests {
                              EndE,
                              EndE,
                              EndD
+                       ] );
+    }
+    //a Content tests
+    #[test]
+    fn test_content0() {
+        test_string( r###"#svg "banana" "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content,
+                         EndE,
+                         EndD
                        ] );
     }
 }
