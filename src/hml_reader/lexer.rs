@@ -245,8 +245,8 @@ impl <R:Reader> Lexer<R> {
         self.token_start = *reader.borrow_pos();
         let ch = self.peek_char(reader)?;
         if let Some(ch) = ch.as_char() {
+            let mut span = Span::new_at(reader.borrow_pos());
             if ch == ';' {
-                let mut span = Span::new_at(reader.borrow_pos());
                 self.get_char(reader)?; // drop the semicolon
                 let mut comment_strings = Vec::new();
                 loop {
@@ -260,14 +260,45 @@ impl <R:Reader> Lexer<R> {
                 }
                 return Ok(Token::comment(span, comment_strings));
             } else if is_hash(ch) {
-                return self.read_tag(reader);
-            } else if ch == '\'' || ch=='"' {
-                let mut span = Span::new_at(reader.borrow_pos());
-                let s = self.read_quoted_string(reader)?;
+                let hash_count = self.read_hash_sequence(reader)?;
+                let ch = self.peek_char(reader)?.as_char().unwrap();
+                if is_quote(ch) {
+                    let ch = self.get_char_no_eof(reader)?;
+                    let s = self.read_quoted_string(reader, ch, hash_count, false)?;
+                    span = span.end_at(reader.borrow_pos());
+                    return Ok(Token::characters(span, s));
+                } else {
+                    return self.read_tag(reader, span, hash_count);
+                }
+            } else if is_quote(ch) {
+                let ch = self.get_char_no_eof(reader)?;
+                let s = self.read_quoted_string(reader, ch, 0, false)?;
                 span = span.end_at(reader.borrow_pos());
                 return Ok(Token::characters(span, s));
+            } else if ch == 'r' {
+                let ch = self.get_char_no_eof(reader)?;
+                if let Some(ch) = self.peek_char(reader)?.as_char() {
+                    if is_hash(ch) {
+                        let hash_count = self.read_hash_sequence(reader)?;
+                        let ch = self.peek_char(reader)?.as_char().unwrap();
+                        if is_quote(ch) {
+                            let ch = self.get_char_no_eof(reader)?;
+                            let s = self.read_quoted_string(reader, ch, hash_count, true)?;
+                            span = span.end_at(reader.borrow_pos());
+                            return Ok(Token::raw_characters(span, s));
+                        } else {
+                            return self.unexpected_character(reader, ch);
+                        }
+                    } else if is_quote(ch) {
+                        let ch = self.get_char_no_eof(reader)?;
+                        let s = self.read_quoted_string(reader, ch, 0, true)?;
+                        span = span.end_at(reader.borrow_pos());
+                        return Ok(Token::raw_characters(span, s));
+                    }
+                }
+                return self.read_attribute(reader, span, Some('r'));
             } else if is_name_start(ch) {
-                return self.read_attribute(reader);
+                return self.read_attribute(reader, span, None);
             }
             return self.unexpected_character(reader, ch);
         } else {
@@ -297,9 +328,15 @@ impl <R:Reader> Lexer<R> {
 
     //mi read_name - read a name, cursor should be pointing at a is_name_start character
     // at end, cursor pointing at first non-name character or EOF
-    fn read_name(&mut self, reader:&mut R) -> Result<R, String> {
+    fn read_name(&mut self, reader:&mut R, initial_ch:Option<char>) -> Result<R, String> {
         let mut s = String::new();
-        let ch = self.get_char_no_eof(reader)?;
+        let ch = {
+            if let Some(ch) = initial_ch {
+                ch
+            } else {
+                self.get_char_no_eof(reader)?
+            }
+        };
         if !is_name_start(ch) {
             return self.unexpected_character(reader, ch);
         }
@@ -321,20 +358,33 @@ impl <R:Reader> Lexer<R> {
     }
 
     //mi read_namespace_name
-    // pointing at first character of name
-    fn read_namespace_name(&mut self, reader:&mut R) -> Result<R, (String,String)> {
-        let name = self.read_name(reader)?;
+    /// initial_ch is Some(first character) or None if reader pointing
+    /// at first character of name
+    fn read_namespace_name(&mut self, reader:&mut R, initial_ch:Option<char>) -> Result<R, (String,String)> {
+        let name = self.read_name(reader, initial_ch)?;
         let ch = self.peek_char(reader)?;
         match ch.as_char() {
             Some(':') => {
                 self.get_char(reader)?;
-                let name2 = self.read_name(reader)?;
+                let name2 = self.read_name(reader, None)?;
                 Ok((name, name2))
             },
             _ => {
                 Ok(("".into(), name))
             },
         }
+    }
+
+    //mi read_hash_sequence - read a sequence of # characters and return its length
+    fn read_hash_sequence(&mut self, reader:&mut R) -> Result<R, usize> {
+        let mut hash_count = 0;
+        loop {
+            let ch = self.peek_char_no_eof(reader)?;
+            if !is_hash(ch) { break; }
+            hash_count += 1;
+            self.get_char(reader)?;
+        }
+        Ok(hash_count)
     }
 
     //mi read_tag - read a tag given cursor is at first #
@@ -345,16 +395,8 @@ impl <R:Reader> Lexer<R> {
     ///
     /// The result is a TagOpen or TagClose, with the depth set to the number of '#'s
     /// at the front of the tag, and the namespace_name set appropriately
-    fn read_tag(&mut self, reader:&mut R) -> Result<R, Token<R::Position>> {
-        let mut span = Span::new_at(reader.borrow_pos());
-        let mut hash_count = 0;
-        loop {
-            let ch = self.peek_char_no_eof(reader)?;
-            if !is_hash(ch) { break; }
-            hash_count += 1;
-            self.get_char(reader)?;
-        }
-        let (ns, name) = self.read_namespace_name(reader)?;
+    fn read_tag(&mut self, reader:&mut R, mut span:Span<R::Position>, hash_count:usize) -> Result<R, Token<R::Position>> {
+        let (ns, name) = self.read_namespace_name(reader, None)?;
         let result = {
             match self.peek_char(reader)?.as_char() {
                 Some('{') => {
@@ -394,7 +436,8 @@ impl <R:Reader> Lexer<R> {
     pub fn read_string(&mut self, reader:&mut R) -> Result<R, String> {
         let ch = self.peek_char_no_eof(reader)?;
         if is_quote(ch) {
-            self.read_quoted_string(reader)
+            let ch = self.get_char_no_eof(reader)?;
+            self.read_quoted_string(reader, ch, 0, false)
         } else {
             let mut result = String::new();
             loop {
@@ -420,61 +463,31 @@ impl <R:Reader> Lexer<R> {
 
     //mi read_quoted_string
     /// reads a quoted string, given the stream cursor is pointing at the opening quote character
-    /// an empty quoted string is two identical quote characters then a different character (or EOF)
-    /// a triple quoted string starts with three identical quote characters and continues (including newlines)
-    /// until the next three identical quote characters
-    /// otherwise it is a single quoted string, which should handle escapes (only \\ => \, \" => ", \' => ', \n => newline?)
-    pub fn read_quoted_string(&mut self, reader:&mut R) -> Result<R, String> {
+    /// 
+    pub fn read_quoted_string(&mut self, reader:&mut R, quote_ch:char, hash_count:usize, _raw:bool) -> Result<R, String> {
         let mut result = String::new();
-        let ch = self.get_char_no_eof(reader)?;
-        let ch2 = self.get_char_no_eof(reader)?;
-        if ch == ch2 {
-            match self.peek_char(reader)?.as_char() {
-                Some(ch3) => {
-                    if ch3 == ch2 {
-                        self.get_char(reader)?;
-                        self.read_triple_quoted_string(reader,ch)
-                    } else {
-                        Ok(result) // empty string
-                    }
-                },
-                _ => {
-                    Ok(result) // empty string
-                },
-            }
-        } else { // build single quoted string - no newlines permitted, copy raw up to next 'ch' character
-            let mut new_ch = ch2;
-            while new_ch != ch {
-                if is_newline(ch) {
+        let mut ch = self.get_char_no_eof(reader)?;
+        loop {
+            while ch != quote_ch {
+                if is_newline(ch) && hash_count == 0 {
                     return self.unexpected_newline_in_string(reader);
                 }
-                result.push(new_ch);
-                new_ch = self.get_char_no_eof(reader)?;
+                result.push(ch);
+                ch = self.get_char_no_eof(reader)?;
             }
-            Ok(result)
-        }
-    }
-
-    //mi read_triple_quoted_string
-    /// read a triple quoted string, with the stream cursor pointing
-    /// at first character of contents (after the triple quote) keeps
-    /// reading characters and pushing them until the three
-    /// consecutive quote characters are seen.
-    fn read_triple_quoted_string(&mut self, reader:&mut R, quote_char:char) -> Result<R, String> {
-        let mut result = String::new();
-        let mut num_quotes = 0;
-        while num_quotes<3 {
-            let ch = self.get_char_no_eof(reader)?;
-            if ch==quote_char {
-                num_quotes += 1;
-            } else if num_quotes>0 {
-                for _ in 0..num_quotes {
-                    result.push(quote_char);
-                }
-                num_quotes = 0;
-                result.push(ch);
-            } else {
-                result.push(ch);
+            // ch == quote_ch; check for hashes if required
+            let mut i = 0;
+            while i < hash_count {
+                ch = self.get_char_no_eof(reader)?;
+                if ch != '#' {break;}
+                i += 1;
+            }
+            if i == hash_count {
+                break;
+            }
+            result.push(quote_ch);
+            for _ in 0..i {
+                result.push('#');
             }
         }
         Ok(result)
@@ -482,9 +495,8 @@ impl <R:Reader> Lexer<R> {
 
     //mi read_attribute
     // Stream is pointing at first character of attribute
-    fn read_attribute(&mut self, reader:&mut R) -> Result<R, Token<R::Position>> {
-        let span = Span::new_at(reader.borrow_pos());
-        let (ns,name) = self.read_namespace_name(reader)?;
+    fn read_attribute(&mut self, reader:&mut R, mut span:Span<R::Position>, initial_ch:Option<char>) -> Result<R, Token<R::Position>> {
+        let (ns, name) = self.read_namespace_name(reader, initial_ch)?;
         let ch   = self.get_char_no_eof(reader)?;
         if ch != '=' {
             return self.expected_equals(reader, ch);

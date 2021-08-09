@@ -188,6 +188,11 @@ impl <R:Reader> Parser<R> {
                     let data = data.pop_front().unwrap();
                     Ok(Some(Event::content(*token.get_span(), ContentType::Interpretable, data)))
                 },
+                TokenType::RawCharacters  => {
+                    let mut data = token.take_contents();
+                    let data = data.pop_front().unwrap();
+                    Ok(Some(Event::content(*token.get_span(), ContentType::Raw, data)))
+                },
                 TokenType::EndOfFile  => {
                     self.pending_eof = true;
                     Ok(None)

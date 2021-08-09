@@ -23,6 +23,7 @@ mod test_infrastructure {
     //a Imports
     use crate::names::{Namespace, NamespaceStack, Tag, Name};
     use crate::reader::{ReaderError};
+    use crate::markup::{ContentType};
     use crate::hml_reader::{Parser, Lexer};
     use crate::string::Reader as StringReader;
     use crate::string::Position as StringPosition;
@@ -35,7 +36,7 @@ mod test_infrastructure {
     pub enum Expectation<'a> {
         StD(usize),
         StE(&'a str, &'a str, &'a [(&'a str, &'a str, &'a str)]),
-        Content,
+        Content(ContentType, &'a str),
         EndE,
         EndD,
         Ignore,
@@ -138,19 +139,23 @@ mod test_infrastructure {
                           }
                         )
                     }
-                    Expectation::Content => {
+                    Expectation::Content(et, es) => {
                         ( format!("Expected a Content got {:?}", t),
                           if t.is_err() {
                               false
                           } else {
                               let t = t.unwrap();
-                              true
-                              /*if let Some(name) = t.as_end_element() {
-                                  self.match_close(ns_stack, name)
+                              if let Some((ct, cs)) = t.as_content() {
+                                  if et != ct {
+                                      false
+                                  } else if es != cs {
+                                      false
+                                  } else {
+                                      true
+                                  }
                               } else {
                                   false
                               }
-*/
                           }
                         )
                     }
@@ -202,6 +207,7 @@ mod test_infrastructure {
 #[allow(dead_code)]
 mod tests {
     //a Imports from test_infrastructure
+    use crate::markup::ContentType;
     use super::test_infrastructure::{test_string};
     use super::test_infrastructure::Expectation::{StD, EndD, StE, EndE, Content};
 
@@ -212,6 +218,20 @@ mod tests {
                        &[StD(100),
                              StE("", "svg", &[]),
                              StE("", "line", &[]),
+                             EndE,
+                             StE("", "text", &[]),
+                             EndE,
+                             EndE,
+                             EndD
+                       ] );
+    }
+    #[test]
+    fn test_structure1() {
+        // Note that #r can introduce a raw string or it may be a tag
+        test_string( "#svg ##rect ##text",
+                       &[StD(100),
+                             StE("", "svg", &[]),
+                             StE("", "rect", &[]),
                              EndE,
                              StE("", "text", &[]),
                              EndE,
@@ -357,7 +377,55 @@ mod tests {
         test_string( r###"#svg "banana" "###,
                        &[StD(100),
                          StE("", "svg",  &[ ]),
-                         Content,
+                         Content(ContentType::Interpretable, "banana"),
+                         EndE,
+                         EndD
+                       ] );
+    }
+    #[test]
+    fn test_content1() {
+        test_string( r###"#svg ##"banana"## "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content(ContentType::Interpretable, "banana"),
+                         EndE,
+                         EndD
+                       ] );
+        test_string( r###"#svg ##"banana
+"## "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content(ContentType::Interpretable, "banana\n"),
+                         EndE,
+                         EndD
+                       ] );
+        test_string( r###"#svg ##'banana
+'## "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content(ContentType::Interpretable, "banana\n"),
+                         EndE,
+                         EndD
+                       ] );
+        test_string( r###"#svg r'banana' "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content(ContentType::Raw, "banana"),
+                         EndE,
+                         EndD
+                       ] );
+        test_string( r###"#svg r#'banana'# "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content(ContentType::Raw, "banana"),
+                         EndE,
+                         EndD
+                       ] );
+        test_string( r###"#svg r#'banana
+'# "###,
+                       &[StD(100),
+                         StE("", "svg",  &[ ]),
+                         Content(ContentType::Raw, "banana\n"),
                          EndE,
                          EndD
                        ] );

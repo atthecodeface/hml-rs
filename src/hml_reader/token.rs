@@ -39,7 +39,9 @@ pub enum TokenType {
     TagClose,
     /// attribute [<string>:]<string>=<quoted string>
     Attribute,
-    /// Quoted string - unquoted
+    /// Quoted string of raw characters
+    RawCharacters,
+    /// Quoted string which needs interpretation (escapes handled)
     Characters,
     /// End of file
     EndOfFile,
@@ -104,6 +106,12 @@ impl <P:Position> Token<P> {
             t = t.add_string(s);
         }
         t
+    }
+
+    //fp raw_characters
+    pub fn raw_characters(span:Span<P>, s:String) -> Self {
+        Self::new(span, TokenType::RawCharacters, 0, false)
+            .add_string(s)
     }
 
     //fp characters
@@ -176,6 +184,9 @@ impl <P:Position> std::fmt::Display for Token<P> {
             }
             Characters => {
                 write!(f, "[{}]chars ...", self.span )
+            },
+            RawCharacters => {
+                write!(f, "[{}]rawchars ...", self.span )
             },
             EndOfFile  => write!(f, "[{}]<eof>", self.span ),
         }
