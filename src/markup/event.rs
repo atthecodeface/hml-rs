@@ -42,7 +42,7 @@ use crate::names::{NSNameId, Name, Tag};
 pub enum ContentType {
     /// Must change to Raw
     Raw,
-    /// Content can be intepreted (escapes/entitied converted to characters/strings)
+    /// Content can be intepreted (escapes/entities converted to characters/strings)
     Interpretable,
     /// The content is whitespace that contains only tab, space or newlines (and hence need not be interpreted)
     Whitespace,

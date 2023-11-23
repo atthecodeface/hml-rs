@@ -199,7 +199,6 @@ impl<'a> Entities<'a> {
                         }
                     }
                     if is_hex || is_dec {
-                        use std::convert::TryFrom;
                         if let Ok(c) = char::try_from(value) {
                             return (i + 1, None, Some(c));
                         }

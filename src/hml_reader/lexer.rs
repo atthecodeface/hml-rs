@@ -204,11 +204,15 @@ impl<R: Reader> Lexer<R> {
     //mi skip_whitespace - get up to first non-whitespace character
     /// Read characters until EOF or non-whitespace
     /// If non-whitespace, then unget it back into the readahead
-    fn skip_whitespace(&mut self, reader: &mut R) -> Result<R, ()> {
+    fn skip_whitespace(&mut self, reader: &mut R, include_nl: bool) -> Result<R, ()> {
         loop {
             let ch = self.get_char(reader)?;
             if let Some(c) = ch.as_char() {
                 if !c.is_whitespace() {
+                    self.unget_char(ch);
+                    break;
+                }
+                if c == '\n' && !include_nl {
                     self.unget_char(ch);
                     break;
                 }
@@ -248,7 +252,7 @@ impl<R: Reader> Lexer<R> {
     ///
     /// Additionally it may return an error for characters that are illegal within the token stream
     pub fn next_token(&mut self, reader: &mut R) -> Result<R, Token<R::Position>> {
-        self.skip_whitespace(reader)?;
+        self.skip_whitespace(reader, true)?;
         self.token_start = *reader.borrow_pos();
         let ch = self.peek_char(reader)?;
         if let Some(ch) = ch.as_char() {
@@ -259,7 +263,7 @@ impl<R: Reader> Lexer<R> {
                 loop {
                     comment_strings.push(self.read_line(reader)?);
                     span = span.end_at(reader.borrow_pos());
-                    self.skip_whitespace(reader)?;
+                    self.skip_whitespace(reader, false)?;
                     if self.peek_char(reader)?.as_char() != Some(';') {
                         break;
                     }

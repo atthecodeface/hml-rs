@@ -43,6 +43,7 @@ pub struct Namespace {
     mappings: HashSet<NSMap>,
 }
 
+//ip Namespace
 impl Namespace {
     //fp new
     /// Create a new Namespace object
@@ -154,31 +155,31 @@ impl Namespace {
         }
     }
 
-    //mp borrow_name_str
+    //ap name_str
     /// Borrow the `str` of a [NSNameId] within the [Namespace]
-    pub fn borrow_name_str(&self, name: NSNameId) -> &str {
+    pub fn name_str<'a>(&'a self, name: NSNameId, default: &'a str) -> &'a str {
         if name.is_none() {
-            ""
+            default
         } else {
             &self.names[name.get().unwrap()]
         }
     }
 
-    //mp borrow_prefix_str
+    //mp prefix_str
     /// Borrow the `str` of a [NSPrefixId] within the [Namespace]
-    pub fn borrow_prefix_str(&self, prefix: NSPrefixId) -> &str {
+    pub fn prefix_str<'a>(&'a self, prefix: NSPrefixId, default: &'a str) -> &'a str {
         if prefix.is_none() {
-            ""
+            default
         } else {
             &self.prefixes[prefix.get().unwrap()]
         }
     }
 
-    //mp borrow_uri_str
+    //mp uri_str
     /// Borrow the `str` of a [NSUriId] within the [Namespace]
-    pub fn borrow_uri_str(&self, uri: NSUriId) -> &str {
+    pub fn uri_str<'a>(&'a self, uri: NSUriId, default: &'a str) -> &'a str {
         if uri.is_none() {
-            ""
+            default
         } else {
             &self.uris[uri.get().unwrap()]
         }
@@ -201,6 +202,8 @@ impl Namespace {
         }
         ns_map
     }
+
+    //zz All done
 }
 
 //a Test

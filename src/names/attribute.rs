@@ -112,9 +112,9 @@ impl Attributes {
         self.attributes
     }
 
-    //mp borrow
+    //ap attributes
     /// Borrow the [Attribute] vec
-    pub fn borrow(&self) -> &Vec<Attribute> {
+    pub fn attributes(&self) -> &[Attribute] {
         &self.attributes
     }
 

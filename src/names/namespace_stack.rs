@@ -23,18 +23,50 @@ use crate::names::{NSMap, NSNameId, NSPrefixId, NSUriId};
 use std::collections::{HashMap, HashSet};
 
 //a NamespaceStackFrame, NamespaceStack, and StackIter
-//ti NamespaceStackFrame
-struct NamespaceStackFrame {
-    mappings: HashMap<NSPrefixId, NSUriId>,
+//ti NamespaceStackFrameIter
+pub struct NamespaceStackFrameIter<'frame> {
+    frame: &'frame NamespaceStackFrame,
+    i: usize,
+    n: usize,
 }
 
-impl NamespaceStackFrame {
-    fn new() -> Self {
-        Self {
-            mappings: HashMap::new(),
+//ii NamespaceStackIterator
+impl<'frame> NamespaceStackFrameIter<'frame> {
+    fn new(frame: &'frame NamespaceStackFrame) -> Self {
+        let n = frame.order.len();
+        let i = 0;
+        Self { frame, n, i }
+    }
+}
+
+//ii Iterator for NamespaceStackIterator
+impl<'frame> Iterator for NamespaceStackFrameIter<'frame> {
+    type Item = NSMap;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i >= self.n {
+            None
+        } else {
+            let prefix_id = self.frame.order[self.i];
+            self.i += 1;
+            if let Some(uri_id) = self.frame.find_mapping(prefix_id) {
+                let map = NSMap::new(prefix_id, *uri_id);
+                Some(map)
+            } else {
+                self.next()
+            }
         }
     }
+}
 
+//ti NamespaceStackFrame
+#[derive(Default)]
+struct NamespaceStackFrame {
+    mappings: HashMap<NSPrefixId, NSUriId>,
+    order: Vec<NSPrefixId>,
+}
+
+//ii NamespaceStackFrame
+impl NamespaceStackFrame {
     //mp add_mapping_by_id
     pub fn add_mapping_by_id(&mut self, map: NSMap) {
         self.mappings.insert(map.prefix_id(), map.uri_id());
@@ -55,11 +87,17 @@ impl NamespaceStackFrame {
     fn find_mapping(&self, prefix_id: NSPrefixId) -> Option<&NSUriId> {
         self.mappings.get(&prefix_id)
     }
+
+    //mp iter_mappings
+    /// Iterate over the mappings defined in this stack frame (prefix to URI)
+    fn iter_mappings(&self) -> NamespaceStackFrameIter {
+        NamespaceStackFrameIter::new(self)
+    }
 }
 
-//ti StackIter
-pub struct NamespaceStackIterator<'a, 'b> {
-    stack: &'b NamespaceStack<'a>,
+//ti NamespaceStackIterator
+pub struct NamespaceStackIterator<'ns, 'b> {
+    stack: &'b NamespaceStack<'ns>,
     // frame goes len() .. 1
     frame: usize,
     // index goes 0..frame.len()
@@ -67,8 +105,10 @@ pub struct NamespaceStackIterator<'a, 'b> {
     // set of NSPrefixId returned so far
     used: HashSet<NSPrefixId>,
 }
-impl<'a, 'b> NamespaceStackIterator<'a, 'b> {
-    fn new(stack: &'b NamespaceStack<'a>) -> Self {
+
+//ii NamespaceStackIterator
+impl<'ns, 'b> NamespaceStackIterator<'ns, 'b> {
+    fn new(stack: &'b NamespaceStack<'ns>) -> Self {
         let frame = stack.stack_depth();
         let frame_iter = None;
         let used = HashSet::new();
@@ -81,7 +121,8 @@ impl<'a, 'b> NamespaceStackIterator<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Iterator for NamespaceStackIterator<'a, 'b> {
+//ii Iterator for NamespaceStackIterator
+impl<'ns, 'b> Iterator for NamespaceStackIterator<'ns, 'b> {
     type Item = NSMap;
     fn next(&mut self) -> Option<Self::Item> {
         if self.frame == 0 {
@@ -138,18 +179,19 @@ impl<'a, 'b> Iterator for NamespaceStackIterator<'a, 'b> {
 ///
 /// ```
 ///
-pub struct NamespaceStack<'a> {
-    namespaces: &'a mut Namespace,
+pub struct NamespaceStack<'ns> {
+    namespaces: &'ns mut Namespace,
     frames: Vec<NamespaceStackFrame>,
 }
 
-impl<'a> NamespaceStack<'a> {
+//ip NamespaceStack
+impl<'ns> NamespaceStack<'ns> {
     //fp new
     /// Create a new [NamespaceStack], mutably borrowing the
     /// [Namespace] for its lifetime
-    pub fn new(namespaces: &'a mut Namespace) -> Self {
+    pub fn new(namespaces: &'ns mut Namespace) -> Self {
         let mut frames = Vec::new();
-        frames.push(NamespaceStackFrame::new());
+        frames.push(NamespaceStackFrame::default());
         let mut s = Self { namespaces, frames };
         if s.uses_xmlns() {
             s.add_default_xmls();
@@ -187,7 +229,7 @@ impl<'a> NamespaceStack<'a> {
     //mp push_frame
     /// Push a new stack frame on to the [NamespaceStack]
     pub fn push_frame(&mut self) {
-        self.frames.push(NamespaceStackFrame::new());
+        self.frames.push(NamespaceStackFrame::default());
     }
 
     //mp pop_frame
@@ -248,31 +290,35 @@ impl<'a> NamespaceStack<'a> {
         self.namespaces.find_prefix(prefix)
     }
 
+    //ap iter_top_mappings
+    /// Get a slice of the mappings of the topmost frame
+    pub fn iter_top_mappings<'a>(&'a self) -> NamespaceStackFrameIter<'a> {
+        assert!(self.frames.is_empty(), "Namespace stack cannot be empty");
+        self.frames.last().unwrap().iter_mappings()
+    }
+
     //mp borrow_mapping
     /// Borrow the two strings corresponding to an [NSMap] within the [Namespace]
     pub fn borrow_mapping(&self, map: NSMap) -> (&str, &str) {
-        (
-            self.borrow_prefix(map.prefix_id()),
-            self.borrow_uri(map.uri_id()),
-        )
+        (self.prefix_str(map.prefix_id()), self.uri_str(map.uri_id()))
     }
 
-    //mp borrow_name
+    //mp name_str
     /// Borrow the name corresponding to an [NSNameId] within the [Namespace]
-    pub fn borrow_name(&self, name: NSNameId) -> &str {
-        self.namespaces.borrow_name_str(name)
+    pub fn name_str(&self, name: NSNameId) -> &str {
+        self.namespaces.name_str(name, "")
     }
 
-    //mp borrow_prefix
+    //mp prefix_str
     /// Borrow the prefix corresponding to an [NSPrefixId] within the [Namespace]
-    pub fn borrow_prefix(&self, prefix: NSPrefixId) -> &str {
-        self.namespaces.borrow_prefix_str(prefix)
+    pub fn prefix_str(&self, prefix: NSPrefixId) -> &str {
+        self.namespaces.prefix_str(prefix, "")
     }
 
-    //mp borrow_uri
+    //mp uri_str
     /// Borrow the URI corresponding to an [NSUriId] within the [Namespace]
-    pub fn borrow_uri(&self, uri: NSUriId) -> &str {
-        self.namespaces.borrow_uri_str(uri)
+    pub fn uri_str(&self, uri: NSUriId) -> &str {
+        self.namespaces.uri_str(uri, "")
     }
 
     //mp add_name
@@ -308,8 +354,8 @@ impl<'a> NamespaceStack<'a> {
         write!(
             w,
             "'{}' => '{}'",
-            self.borrow_prefix(map.prefix_id()),
-            self.borrow_uri(map.uri_id())
+            self.prefix_str(map.prefix_id()),
+            self.uri_str(map.uri_id())
         )
     }
 
@@ -317,9 +363,9 @@ impl<'a> NamespaceStack<'a> {
 }
 
 //ip IntoIterator for NamespaceStack
-impl<'a, 'b> IntoIterator for &'b NamespaceStack<'a> {
+impl<'ns, 'b> IntoIterator for &'b NamespaceStack<'ns> {
     type Item = NSMap;
-    type IntoIter = NamespaceStackIterator<'a, 'b>;
+    type IntoIter = NamespaceStackIterator<'ns, 'b>;
 
     fn into_iter(self) -> Self::IntoIter {
         NamespaceStackIterator::new(self)
@@ -348,18 +394,18 @@ mod test {
 
         let pid = nst.find_prefix_id("").unwrap();
         assert!(pid.is_none());
-        assert_eq!(nst.borrow_prefix(pid), "");
+        assert_eq!(nst.prefix_str(pid, ""), "");
         assert_eq!(nst.borrow_uri(nst.find_mapping(pid).unwrap()), "");
 
         let pid = nst.find_prefix_id("xml").unwrap();
-        assert_eq!(nst.borrow_prefix(pid), "xml");
+        assert_eq!(nst.prefix_str(pid, ""), "xml");
         assert_eq!(
             nst.borrow_uri(nst.find_mapping(pid).unwrap()),
             "http://www.w3.org/XML/1998/namespace"
         );
 
         let pid = nst.find_prefix_id("xmlns").unwrap();
-        assert_eq!(nst.borrow_prefix(pid), "xmlns");
+        assert_eq!(nst.prefix_str(pid, ""), "xmlns");
         assert_eq!(
             nst.borrow_uri(nst.find_mapping(pid).unwrap()),
             "http://www.w3.org/2000/xmlns/"
@@ -374,7 +420,7 @@ mod test {
         assert_eq!(nst.into_iter().count(), 4);
 
         let pid = nst.find_prefix_id("fred").unwrap();
-        assert_eq!(nst.borrow_prefix(pid), "fred");
+        assert_eq!(nst.prefix_str(pid, ""), "fred");
         assert_eq!(
             nst.borrow_uri(nst.find_mapping(pid).unwrap()),
             "http://fred.com"
@@ -394,7 +440,7 @@ mod test {
 
         nst.add_ns("xml", "http://xml_override");
         let pid = nst.find_prefix_id("xml").unwrap();
-        assert_eq!(nst.borrow_prefix(pid), "xml");
+        assert_eq!(nst.prefix_str(pid, ""), "xml");
         assert_eq!(
             nst.borrow_uri(nst.find_mapping(pid).unwrap()),
             "http://xml_override"
@@ -408,18 +454,18 @@ mod test {
 
         let pid = nst.find_prefix_id("").unwrap();
         assert!(pid.is_none());
-        assert_eq!(nst.borrow_prefix(pid), "");
+        assert_eq!(nst.prefix_str(pid, ""), "");
         assert_eq!(nst.borrow_uri(nst.find_mapping(pid).unwrap()), "");
 
         let pid = nst.find_prefix_id("xml").unwrap();
-        assert_eq!(nst.borrow_prefix(pid), "xml");
+        assert_eq!(nst.prefix_str(pid, ""), "xml");
         assert_eq!(
             nst.borrow_uri(nst.find_mapping(pid).unwrap()),
             "http://www.w3.org/XML/1998/namespace"
         );
 
         let pid = nst.find_prefix_id("xmlns").unwrap();
-        assert_eq!(nst.borrow_prefix(pid), "xmlns");
+        assert_eq!(nst.prefix_str(pid, ""), "xmlns");
         assert_eq!(
             nst.borrow_uri(nst.find_mapping(pid).unwrap()),
             "http://www.w3.org/2000/xmlns/"

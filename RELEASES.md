@@ -1,3 +1,11 @@
+# Release 0.2.0 (2023-11-23)
+
+- Changed borrow_*_str in namespace to *_str, with the user providing a default
+
+- Removed 'new' from namespace_stack; use default instead
+
+**Contributors**: @atthecodeface
+
 # Release 0.1.4 (2021-06-23)
 
 - Added documentation for the library and some simple code examples

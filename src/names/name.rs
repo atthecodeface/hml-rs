@@ -110,13 +110,45 @@ impl Name {
     /// Create a new `String` of the [Name]
     pub fn to_string(&self, ns: &NamespaceStack) -> String {
         if self.prefix.is_none() {
-            format!("{}", ns.borrow_name(self.name))
+            format!("{}", ns.name_str(self.name))
         } else {
-            format!(
-                "{}:{}",
-                ns.borrow_prefix(self.prefix),
-                ns.borrow_name(self.name)
-            )
+            format!("{}:{}", ns.prefix_str(self.prefix), ns.name_str(self.name))
+        }
+    }
+
+    //ap has_prefix
+    /// Returns true if the name has a prefix
+    pub fn has_prefix(&self) -> bool {
+        !self.prefix.is_none()
+    }
+
+    //ap has_uri
+    /// Returns 'true' if the name has a URI associated with it
+    pub fn has_uri(&self) -> bool {
+        !self.uri.is_none()
+    }
+}
+
+//a If xml_rs is included
+#[cfg(feature = "xml")]
+//ip Name
+impl Name {
+    //mp as_xml_owned_name
+    /// Get an [xml::name::OwnedName] from this Name
+    pub fn as_xml_owned_name(&self, ns: &NamespaceStack) -> xml::name::OwnedName {
+        if self.has_prefix() {
+            xml::name::Name::prefixed(ns.name_str(self.name), ns.prefix_str(self.prefix)).to_owned()
+        } else {
+            xml::name::Name::local(ns.name_str(self.name)).to_owned()
+        }
+    }
+    //mp as_xml_name
+    /// Get an [xml::name::OwnedName] from this Name
+    pub fn as_xml_name<'a>(&'a self, ns: &'a NamespaceStack) -> xml::name::Name<'a> {
+        if self.has_prefix() {
+            xml::name::Name::prefixed(ns.name_str(self.name), ns.prefix_str(self.prefix))
+        } else {
+            xml::name::Name::local(ns.name_str(self.name))
         }
     }
 }
