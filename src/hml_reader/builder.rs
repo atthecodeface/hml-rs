@@ -1,26 +1,7 @@
-/*a Copyright
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-@file    builder.rs
-@brief   Markup builder for assisting parsers
- */
-
 //a Imports
 use crate::markup::Event;
 use crate::names::{Attributes, Name, NamespaceStack, Tag};
-use crate::reader::{Position, Reader};
-use crate::reader::{ReaderError, Span};
+use crate::reader::{Position, Reader, ReaderError, Span};
 
 type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
@@ -53,6 +34,7 @@ impl<P: Position, T: std::fmt::Debug> OpenTag<P, T> {
 #[derive(Clone, Debug)]
 pub struct CloseTag<P: Position, T: std::fmt::Debug> {
     span: Span<P>,
+    #[allow(dead_code)]
     name: Name,
     pub extra: T,
 }
@@ -109,7 +91,7 @@ impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
     ) -> Self {
         ns_stack.push_frame();
 
-        let attributes = Attributes::new();
+        let attributes = Attributes::default();
         let tag_name = Name::none();
         StackElement {
             parent_depth,
@@ -132,7 +114,7 @@ impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
         &mut self,
         ns_stack: &mut NamespaceStack,
     ) -> Result<R, Event<Span<R::Position>>> {
-        let attributes = std::mem::replace(&mut self.attributes, Attributes::new());
+        let attributes = std::mem::replace(&mut self.attributes, Attributes::default());
         let tag = ReaderError::of_markup_result(
             self.open_tag.span,
             Tag::new(

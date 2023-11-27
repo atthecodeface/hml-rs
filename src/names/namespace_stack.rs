@@ -394,20 +394,20 @@ mod test {
 
         let pid = nst.find_prefix_id("").unwrap();
         assert!(pid.is_none());
-        assert_eq!(nst.prefix_str(pid, ""), "");
-        assert_eq!(nst.borrow_uri(nst.find_mapping(pid).unwrap()), "");
+        assert_eq!(nst.prefix_str(pid), "");
+        assert_eq!(nst.uri_str(nst.find_mapping(pid).unwrap()), "");
 
         let pid = nst.find_prefix_id("xml").unwrap();
-        assert_eq!(nst.prefix_str(pid, ""), "xml");
+        assert_eq!(nst.prefix_str(pid), "xml");
         assert_eq!(
-            nst.borrow_uri(nst.find_mapping(pid).unwrap()),
+            nst.uri_str(nst.find_mapping(pid).unwrap()),
             "http://www.w3.org/XML/1998/namespace"
         );
 
         let pid = nst.find_prefix_id("xmlns").unwrap();
-        assert_eq!(nst.prefix_str(pid, ""), "xmlns");
+        assert_eq!(nst.prefix_str(pid), "xmlns");
         assert_eq!(
-            nst.borrow_uri(nst.find_mapping(pid).unwrap()),
+            nst.uri_str(nst.find_mapping(pid).unwrap()),
             "http://www.w3.org/2000/xmlns/"
         );
 
@@ -420,29 +420,29 @@ mod test {
         assert_eq!(nst.into_iter().count(), 4);
 
         let pid = nst.find_prefix_id("fred").unwrap();
-        assert_eq!(nst.prefix_str(pid, ""), "fred");
+        assert_eq!(nst.prefix_str(pid), "fred");
         assert_eq!(
-            nst.borrow_uri(nst.find_mapping(pid).unwrap()),
+            nst.uri_str(nst.find_mapping(pid).unwrap()),
             "http://fred.com"
         );
 
         nst.add_ns_if_unset("fred", "http://NOTfred.com");
         assert_eq!(
-            nst.borrow_uri(nst.find_mapping(pid).unwrap()),
+            nst.uri_str(nst.find_mapping(pid).unwrap()),
             "http://fred.com"
         );
 
         nst.add_ns("fred", "http://fred2.com");
         assert_eq!(
-            nst.borrow_uri(nst.find_mapping(pid).unwrap()),
+            nst.uri_str(nst.find_mapping(pid).unwrap()),
             "http://fred2.com"
         );
 
         nst.add_ns("xml", "http://xml_override");
         let pid = nst.find_prefix_id("xml").unwrap();
-        assert_eq!(nst.prefix_str(pid, ""), "xml");
+        assert_eq!(nst.prefix_str(pid), "xml");
         assert_eq!(
-            nst.borrow_uri(nst.find_mapping(pid).unwrap()),
+            nst.uri_str(nst.find_mapping(pid).unwrap()),
             "http://xml_override"
         );
 
@@ -454,20 +454,20 @@ mod test {
 
         let pid = nst.find_prefix_id("").unwrap();
         assert!(pid.is_none());
-        assert_eq!(nst.prefix_str(pid, ""), "");
-        assert_eq!(nst.borrow_uri(nst.find_mapping(pid).unwrap()), "");
+        assert_eq!(nst.prefix_str(pid), "");
+        assert_eq!(nst.uri_str(nst.find_mapping(pid).unwrap()), "");
 
         let pid = nst.find_prefix_id("xml").unwrap();
-        assert_eq!(nst.prefix_str(pid, ""), "xml");
+        assert_eq!(nst.prefix_str(pid), "xml");
         assert_eq!(
-            nst.borrow_uri(nst.find_mapping(pid).unwrap()),
+            nst.uri_str(nst.find_mapping(pid).unwrap()),
             "http://www.w3.org/XML/1998/namespace"
         );
 
         let pid = nst.find_prefix_id("xmlns").unwrap();
-        assert_eq!(nst.prefix_str(pid, ""), "xmlns");
+        assert_eq!(nst.prefix_str(pid), "xmlns");
         assert_eq!(
-            nst.borrow_uri(nst.find_mapping(pid).unwrap()),
+            nst.uri_str(nst.find_mapping(pid).unwrap()),
             "http://www.w3.org/2000/xmlns/"
         );
 

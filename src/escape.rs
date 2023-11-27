@@ -36,7 +36,7 @@ pub const ESCAPE_CR: usize = 16;
 
 //cp ESCAPE_ATTR
 /// Bitmask to enable unescaping of all attributes
-pub const ESCAPE_ATTR: usize = ESCAPE_QUOTE | ESCAPE_APOS | ESCAPE_GT | ESCAPE_LF | ESCAPE_CR | 0;
+pub const ESCAPE_ATTR: usize = ESCAPE_QUOTE | ESCAPE_APOS | ESCAPE_GT | ESCAPE_LF | ESCAPE_CR;
 
 //cp ESCAPE_PCDATA
 /// Bitmask used to unescape PCDATA - that is, none
@@ -54,10 +54,10 @@ pub fn escape_required(bytes: &[u8], char_set: usize, i: usize, n: usize) -> Opt
     if i > 0 {
         r.extend_from_slice(&bytes[0..i]);
     }
-    for i in i..n {
-        let b = bytes[i];
+    // for i in i..n {
+    for b in bytes.iter().take(n).skip(i) {
         if b & 0x80 != 0 {
-            r.push(b);
+            r.push(*b);
         } else {
             match b {
                 b'&' => {
@@ -82,7 +82,7 @@ pub fn escape_required(bytes: &[u8], char_set: usize, i: usize, n: usize) -> Opt
                     r.extend_from_slice(b"&#xD;");
                 }
                 _ => {
-                    r.push(b);
+                    r.push(*b);
                 }
             }
         }
@@ -128,18 +128,13 @@ pub fn escape(s: &str, char_set: usize) -> Option<String> {
 
 //tp Entities
 /// A set of entities that should be unmapped and how they should be unmapped
+#[derive(Default)]
 pub struct Entities<'a> {
     map: HashMap<&'a [u8], &'a str>,
 }
-impl<'a> Entities<'a> {
-    //fp new
-    /// Create a new empty Entities set
-    pub fn new() -> Self {
-        Self {
-            map: HashMap::new(),
-        }
-    }
 
+//ip Entities
+impl<'a> Entities<'a> {
     //fp xml
     /// Create a new Entities set for XML entity parsing
     pub fn xml() -> Self {
@@ -156,6 +151,7 @@ impl<'a> Entities<'a> {
         map.insert(b"QUOT", "\"");
         Self { map }
     }
+
     //fp find_span
     /// Find the span starting with the given index `i` that is either
     /// from an entity (starting with '&' ending with ';') - which is
@@ -210,7 +206,7 @@ impl<'a> Entities<'a> {
                     if b != b'#' {
                         is_dec = false;
                     }
-                } else if (b >= b'a' && b <= b'f') || (b >= b'A' && b <= b'F') {
+                } else if (b'a'..=b'f').contains(&b) || (b'A'..=b'F').contains(&b) {
                     value = (value << 4) | (((b & 0xf) + 9) as u32);
                     is_dec = false;
                 } else if b == b'x' {
@@ -218,7 +214,7 @@ impl<'a> Entities<'a> {
                         is_hex = true;
                     }
                     is_dec = false;
-                } else if b >= b'0' && b <= b'9' {
+                } else if b.is_ascii_digit() {
                     if is_dec {
                         value = (value * 10).wrapping_add((b - b'0') as u32);
                     } else {
@@ -350,6 +346,7 @@ impl<'a> Entities<'a> {
     }
 }
 
+//a Test
 #[cfg(test)]
 mod test {
     use super::*;

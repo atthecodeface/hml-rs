@@ -1,21 +1,3 @@
-/*a Copyright
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-@file    esacpe.rs
-@brief   Interpret HML escapable strings
- */
-
 //a Imports
 use std::convert::TryFrom;
 
@@ -42,13 +24,13 @@ impl Error {
         Err(Self::BadEscape(format!("{} '{}'", reason, byte)))
     }
     fn bad_hex_digit<T>(reason: &str, _byte: u8) -> Result<T> {
-        Err(Self::BadHexDigit(format!("{}", reason)))
+        Err(Self::BadHexDigit(reason.to_string()))
     }
     fn bad_hex_escape<T>(reason: &str, _bytes: &[u8], _offset: usize) -> Result<T> {
-        Err(Self::BadHexEscape(format!("{}", reason)))
+        Err(Self::BadHexEscape(reason.to_string()))
     }
     fn bad_unicode<T>(reason: &str, _bytes: &[u8], _offset: usize) -> Result<T> {
-        Err(Self::BadUnicode(format!("{}", reason)))
+        Err(Self::BadUnicode(reason.to_string()))
     }
     fn end_of_string_in_escape<T>(bytes: &[u8]) -> Result<T> {
         Err(Self::EndOfStringInEscape(
@@ -65,11 +47,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 //fp hex_of_byte
 fn hex_of_byte(reason: &str, b: u8) -> Result<u32> {
     let value = {
-        if b >= b'0' && b <= b'9' {
+        if b.is_ascii_digit() {
             b - b'0'
-        } else if b >= b'a' && b <= b'f' {
+        } else if (b'a'..=b'f').contains(&b) {
             10 + (b - b'a')
-        } else if b >= b'A' && b <= b'F' {
+        } else if (b'A'..=b'F').contains(&b) {
             10 + (b - b'A')
         } else {
             return Error::bad_hex_digit(reason, b);
@@ -181,7 +163,7 @@ impl<'a> Escapable<'a> {
                                         + (hex_of_byte(
                                             "hex escape requires hex digits",
                                             bytes[i + 2],
-                                        )? << 0);
+                                        )?);
                                 if unicode > 0x7f {
                                     return Error::bad_hex_escape(
                                         "hex escape must be in range 0-0x7f",
@@ -260,11 +242,8 @@ impl<'a> Escapable<'a> {
         let n = s.len();
         let bytes = s.as_bytes();
         for i in 0..n {
-            match bytes[i] {
-                b'\\' => {
-                    return Self::unescape(bytes, i, n);
-                }
-                _ => (),
+            if bytes[i] == b'\\' {
+                return Self::unescape(bytes, i, n);
             }
         }
         Ok(None)

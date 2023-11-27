@@ -69,9 +69,9 @@ mod test_infrastructure {
             name: &str,
             attrs: &[(&str, &str, &str)],
         ) -> bool {
-            if ns_stack.borrow_name(tag.name.name) != name {
+            if ns_stack.name_str(tag.name.name) != name {
                 false
-            } else if ns_stack.borrow_uri(tag.name.uri) != uri {
+            } else if ns_stack.uri_str(tag.name.uri) != uri {
                 false
             } else {
                 self.stack.push(tag.name);
@@ -84,13 +84,13 @@ mod test_infrastructure {
                             "Check attrs {:?} {:?} {} {}",
                             e,
                             a,
-                            ns_stack.borrow_uri(a.name.uri),
-                            ns_stack.borrow_name(a.name.name)
+                            ns_stack.uri_str(a.name.uri),
+                            ns_stack.name_str(a.name.name)
                         );
-                        if ns_stack.borrow_uri(a.name.uri) != e.0 {
+                        if ns_stack.uri_str(a.name.uri) != e.0 {
                             return false;
                         }
-                        if ns_stack.borrow_name(a.name.name) != e.1 {
+                        if ns_stack.name_str(a.name.name) != e.1 {
                             return false;
                         }
                         if a.value != e.2 {

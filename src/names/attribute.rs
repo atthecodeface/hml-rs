@@ -43,7 +43,7 @@ impl Attribute {
         value: String,
     ) -> crate::markup::Result<Self> {
         if ns_stack.uses_xmlns() {
-            if prefix == "" && name == "xmlns" {
+            if prefix.is_empty() && name == "xmlns" {
                 println!("Add ns '' to be {}", value);
                 ns_stack.add_ns("", &value);
                 let name = Name::new(ns_stack, name, name)?;
@@ -64,7 +64,7 @@ impl Attribute {
 //tp Attributes
 /// A list of attributes in the order in which they appear in the
 /// markup stream
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Attributes {
     //
     attributes: Vec<Attribute>,
@@ -72,13 +72,6 @@ pub struct Attributes {
 
 //ip Attributes
 impl Attributes {
-    //fp new
-    /// Create a new list of [Attribute]
-    pub fn new() -> Self {
-        Self {
-            attributes: Vec::new(),
-        }
-    }
     //mp is_empty
     /// Returns true if the [Attributes] list is empty
     pub fn is_empty(&self) -> bool {

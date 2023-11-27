@@ -1,21 +1,3 @@
-/*a Copyright
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-@file    lexer.rs
-@brief   Lexical analyzer creating tokens from utf8
- */
-
 //a Documentation
 //! This module provides a tokenizer for HML documents. HML documents are UTF-8 encoded.
 //!
@@ -50,9 +32,12 @@ limitations under the License.
 
 //a Imports
 use super::Token;
+use crate::reader;
 use crate::reader::{Character, Position, Reader};
-use crate::reader::{ReaderError, Span};
-type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
+
+//a Result
+//ti Result
+type Result<R, T> = reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Utils
 //fp is_quote
@@ -144,7 +129,7 @@ impl<R: Reader> Lexer<R> {
                     self.read_ahead = Some(ch);
                     Ok(ch)
                 }
-                Err(e) => ReaderError::of_reader(reader, e),
+                Err(e) => reader::ReaderError::of_reader(reader, e),
             },
         }
     }
@@ -178,7 +163,7 @@ impl<R: Reader> Lexer<R> {
             }
             None => match reader.next_char() {
                 Ok(ch) => Ok(ch),
-                Err(e) => ReaderError::of_reader(reader, e),
+                Err(e) => reader::ReaderError::of_reader(reader, e),
             },
         }
     }
@@ -197,7 +182,7 @@ impl<R: Reader> Lexer<R> {
 
     //mi unget_char - return a character to the (single char) readahead buffer
     /// Unget a character - put it into the readahead
-    fn unget_char(&mut self, char: R::Char) -> () {
+    fn unget_char(&mut self, char: R::Char) {
         self.read_ahead = Some(char);
     }
 
@@ -256,7 +241,7 @@ impl<R: Reader> Lexer<R> {
         self.token_start = *reader.borrow_pos();
         let ch = self.peek_char(reader)?;
         if let Some(ch) = ch.as_char() {
-            let mut span = Span::new_at(reader.borrow_pos());
+            let mut span = reader::Span::new_at(reader.borrow_pos());
             if ch == ';' {
                 self.get_char(reader)?; // drop the semicolon
                 let mut comment_strings = Vec::new();
@@ -313,28 +298,28 @@ impl<R: Reader> Lexer<R> {
             }
             return self.unexpected_character(reader, ch);
         } else {
-            Ok(Token::eof(Span::new_at(reader.borrow_pos())))
+            Ok(Token::eof(reader::Span::new_at(reader.borrow_pos())))
         }
     }
 
     //mi unexpected_eof
     fn unexpected_eof<T>(&self, reader: &R) -> Result<R, T> {
-        ReaderError::unexpected_eof(&self.token_start, reader.borrow_pos())
+        reader::ReaderError::unexpected_eof(&self.token_start, reader.borrow_pos())
     }
 
     //mi unexpected_character
     fn unexpected_character<T>(&self, reader: &R, ch: char) -> Result<R, T> {
-        ReaderError::unexpected_character(&self.token_start, reader.borrow_pos(), ch)
+        reader::ReaderError::unexpected_character(&self.token_start, reader.borrow_pos(), ch)
     }
 
     //mi unexpected_newline_in_string
     fn unexpected_newline_in_string<T>(&self, reader: &R) -> Result<R, T> {
-        ReaderError::unexpected_newline_in_string(&self.token_start, reader.borrow_pos())
+        reader::ReaderError::unexpected_newline_in_string(&self.token_start, reader.borrow_pos())
     }
 
     //mi expected_equals
     fn expected_equals<T>(&self, reader: &R, ch: char) -> Result<R, T> {
-        ReaderError::expected_equals(&self.token_start, reader.borrow_pos(), ch)
+        reader::ReaderError::expected_equals(&self.token_start, reader.borrow_pos(), ch)
     }
 
     //mi read_name - read a name, cursor should be pointing at a is_name_start character
@@ -413,7 +398,7 @@ impl<R: Reader> Lexer<R> {
     fn read_tag(
         &mut self,
         reader: &mut R,
-        mut span: Span<R::Position>,
+        mut span: reader::Span<R::Position>,
         hash_count: usize,
     ) -> Result<R, Token<R::Position>> {
         let (ns, name) = self.read_namespace_name(reader, None)?;
@@ -526,7 +511,7 @@ impl<R: Reader> Lexer<R> {
     fn read_attribute(
         &mut self,
         reader: &mut R,
-        mut span: Span<R::Position>,
+        mut span: reader::Span<R::Position>,
         initial_ch: Option<char>,
     ) -> Result<R, Token<R::Position>> {
         let (ns, name) = self.read_namespace_name(reader, initial_ch)?;

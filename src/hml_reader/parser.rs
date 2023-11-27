@@ -81,6 +81,8 @@ impl<R: Reader> Parser<R> {
     }
 
     //mp set_version
+    /// Set the target XML version number - 100 for 1.00, or 110 for
+    /// 1.10
     #[inline]
     pub fn set_version(mut self, version: usize) -> Self {
         self.version = version;
@@ -287,23 +289,22 @@ impl<R: Reader> Parser<R> {
                 self.finished = true;
                 let span = Span::new_at(&self.token_pos);
                 return Ok(Event::end_document(span));
-            } else {
-                if let Some(event) = {
-                    if self.pending_eof {
-                        self.handle_pending_eof(ns_stack)
-                    } else if let Some(close_tag) = self.pending_close_tag.take() {
-                        self.handle_close_tag(ns_stack, close_tag)
-                    } else if let Some(open_tag) = self.pending_open_tag.take() {
-                        self.handle_open_tag(ns_stack, open_tag)
-                    } else if let Some(token) = self.pending_token.take() {
-                        self.handle_token(ns_stack, token)
-                    } else {
-                        let token = get_token()?;
-                        self.handle_token(ns_stack, token)
-                    }
-                }? {
-                    return Ok(event);
+            }
+            if let Some(event) = {
+                if self.pending_eof {
+                    self.handle_pending_eof(ns_stack)
+                } else if let Some(close_tag) = self.pending_close_tag.take() {
+                    self.handle_close_tag(ns_stack, close_tag)
+                } else if let Some(open_tag) = self.pending_open_tag.take() {
+                    self.handle_open_tag(ns_stack, open_tag)
+                } else if let Some(token) = self.pending_token.take() {
+                    self.handle_token(ns_stack, token)
+                } else {
+                    let token = get_token()?;
+                    self.handle_token(ns_stack, token)
                 }
+            }? {
+                return Ok(event);
             }
         }
     }
