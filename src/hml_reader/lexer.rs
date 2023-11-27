@@ -63,20 +63,20 @@ pub fn is_name_start(ch: char) -> bool {
         // ?? 58 => {true}, // colon
         95 => true, // underscore
         _ => {
-            ((ch>=65) && (ch<=90))       ||    // A-Z
-                    ((ch>=97) && (ch<=122))     ||   // a-z
-                    ((ch>=0xc0) && (ch<=0xd6)) ||
-                    ((ch>=0xd8) && (ch<=0xf6)) ||
-                    ((ch>=0xf8) && (ch<=0x2ff)) ||
-                    ((ch>=0x370) && (ch<=0x37d)) ||
-                    ((ch>=0x37f) && (ch<=0x1fff)) ||
-                    ((ch>=0x200c) && (ch<=0x200d)) ||
-                    ((ch>=0x2070) && (ch<=0x218f)) ||
-                    ((ch>=0x2c00) && (ch<=0x2fef)) ||
-                    ((ch>=0x3001) && (ch<=0xd7ff)) ||
-                    ((ch>=0xf900) && (ch<=0xfdcf)) ||
-                    ((ch>=0xfdf0) && (ch<=0xfffd)) ||
-                    ((ch>=0x10000) && (ch<=0xeffff))
+            (65..=90).contains(&ch)       ||    // A-Z
+            (97..=122).contains(&ch)      ||    // a-z
+            (0xc0..=0xd6).contains(&ch)      ||
+            (0xd8..=0xf6).contains(&ch)      ||
+            (0xf8..=0x2ff).contains(&ch)      ||
+            (0x370..=0x37d).contains(&ch)      ||
+            (0x37f..=0x1fff).contains(&ch)      ||
+            (0x200c..=0x200d).contains(&ch)      ||
+            (0x2070..=0x218f).contains(&ch)      ||
+            (0x2c00..=0x2fef).contains(&ch)      ||
+            (0x3001..=0xd7ff).contains(&ch)      ||
+            (0xf900..=0xfdcf).contains(&ch)      ||
+            (0xfdf0..=0xfffd).contains(&ch)      ||
+            (0x10000..=0xeffff).contains(&ch)
         }
     }
 }
@@ -91,9 +91,9 @@ pub fn is_name(ch: char) -> bool {
     } else {
         let ch = ch as u32;
         ((ch==45) || (ch==46) || (ch==0xb7)) || // - .
-            ((ch>=48) && (ch<=57)) || // 0-9
-            ((ch>=0x399) && (ch<=0x36f)) ||
-            ((ch>=0x203f) && (ch<=0x2040))
+            (48..=57).contains(&ch) ||
+            (0x369..=0x36f).contains(&ch) ||
+            (0x203f..=0x2040).contains(&ch)
     }
 }
 
@@ -108,17 +108,18 @@ pub struct Lexer<R: Reader> {
     token_start: R::Position,
 }
 
-//ip Lexer
-impl<R: Reader> Lexer<R> {
-    //fp new -
-    /// Returns a new lexer with default state.
-    pub fn new() -> Self {
+//ip Default for Lexer
+impl<R: Reader> Default for Lexer<R> {
+    fn default() -> Self {
         Lexer {
             read_ahead: None,
             token_start: R::Position::none(),
         }
     }
+}
 
+//ip Lexer
+impl<R: Reader> Lexer<R> {
     //mi peek_char - peek at the next character
     /// Peek character
     fn peek_char(&mut self, reader: &mut R) -> Result<R, R::Char> {
@@ -225,7 +226,7 @@ impl<R: Reader> Lexer<R> {
                 break;
             }
         }
-        return Ok(s);
+        Ok(s)
     }
 
     //mp next_token
@@ -296,7 +297,7 @@ impl<R: Reader> Lexer<R> {
             } else if is_name_start(ch) {
                 return self.read_attribute(reader, span, None);
             }
-            return self.unexpected_character(reader, ch);
+            self.unexpected_character(reader, ch)
         } else {
             Ok(Token::eof(reader::Span::new_at(reader.borrow_pos())))
         }
@@ -350,7 +351,7 @@ impl<R: Reader> Lexer<R> {
             }
         }
         self.token_start = *reader.borrow_pos();
-        return Ok(s);
+        Ok(s)
     }
 
     //mi read_namespace_name

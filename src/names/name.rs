@@ -110,7 +110,7 @@ impl Name {
     /// Create a new `String` of the [Name]
     pub fn to_string(&self, ns: &NamespaceStack) -> String {
         if self.prefix.is_none() {
-            format!("{}", ns.name_str(self.name))
+            ns.name_str(self.name).to_string()
         } else {
             format!("{}:{}", ns.prefix_str(self.prefix), ns.name_str(self.name))
         }

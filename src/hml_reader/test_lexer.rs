@@ -12,7 +12,7 @@ mod tests {
    ; with more comment
    #banana #fred:tob{ r='2' r"Raw string" ##"Stuff "  and more "##"#####;
         let mut reader = Reader::new(buf);
-        let mut lexer = Lexer::new();
+        let mut lexer = Lexer::default();
         loop {
             let t = lexer.next_token(&mut reader);
             assert_eq!(t.is_err(), false, "T should not be an error : {:?}", t);

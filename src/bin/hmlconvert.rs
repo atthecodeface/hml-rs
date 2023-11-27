@@ -45,8 +45,9 @@ fn main() {
             let mut reader = hml_rs::string::Reader::new(&text);
             let mut namespace = Namespace::new(false);
             let mut namespace_stack = NamespaceStack::new(&mut namespace);
-            let mut lexer = hml_rs::hml_reader::Lexer::new();
-            let mut parser: Parser<hml_rs::string::Reader> = Parser::new().set_version(xml_version);
+            let mut lexer = hml_rs::hml_reader::Lexer::default();
+            let mut parser: Parser<hml_rs::string::Reader> =
+                Parser::default().set_version(xml_version);
             let output = std::io::stdout();
             let mut writer = xml::writer::EmitterConfig::new()
                 .perform_indent(true)

@@ -1,21 +1,3 @@
-/*a Copyright
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-@file    parser.rs
-@brief   HML parser, part of the HML reader using its Lexer
- */
-
 //a Imports
 use super::{CloseTag, OpenTag, StackElement, Token, TokenType};
 use crate::markup::{ContentType, Event};
@@ -59,11 +41,9 @@ pub struct Parser<R: Reader> {
 pub type EventResult<R> = Result<R, Event<Span<<R as Reader>::Position>>>;
 pub type OptEventResult<R> = Result<R, Option<Event<Span<<R as Reader>::Position>>>>;
 
-//ip Parser
-impl<R: Reader> Parser<R> {
-    //fp new
-    /// Returns a new lexer with default state.
-    pub fn new() -> Self {
+//ip Default for Parser
+impl<R: Reader> Default for Parser<R> {
+    fn default() -> Self {
         Parser {
             version: 100,
             start_emitted: false,
@@ -79,7 +59,10 @@ impl<R: Reader> Parser<R> {
             token_pos: R::Position::none(),
         }
     }
+}
 
+//ip Parser
+impl<R: Reader> Parser<R> {
     //mp set_version
     /// Set the target XML version number - 100 for 1.00, or 110 for
     /// 1.10
@@ -96,7 +79,7 @@ impl<R: Reader> Parser<R> {
         ns_stack: &mut NamespaceStack,
         span: &Span<R::Position>,
     ) -> OptEventResult<R> {
-        assert!(self.tag_stack.len() > 0);
+        assert!(!self.tag_stack.is_empty());
         let (e, depth) = self.tag_stack.pop().unwrap().as_end_element(ns_stack, span);
         self.tag_depth = depth;
         Ok(Some(e))
@@ -104,12 +87,12 @@ impl<R: Reader> Parser<R> {
 
     //mi handle_pending_eof
     fn handle_pending_eof(&mut self, ns_stack: &mut NamespaceStack) -> OptEventResult<R> {
-        if self.tag_stack.len() > 0 {
-            let span = Span::new_at(&self.token_pos);
-            self.pop_tag_stack(ns_stack, &span)
-        } else {
+        if self.tag_stack.is_empty() {
             self.end_emitted = true;
             Ok(None)
+        } else {
+            let span = Span::new_at(&self.token_pos);
+            self.pop_tag_stack(ns_stack, &span)
         }
     }
 

@@ -251,19 +251,13 @@ impl<F: Span> Event<F> {
     //mp is_start_document
     /// Return true if the Event is a StartDocument event
     pub fn is_start_document(&self) -> bool {
-        match self {
-            Self::StartDocument { .. } => true,
-            _ => false,
-        }
+        matches!(self, Self::StartDocument { .. })
     }
 
     //mp is_end_document
     /// Return true if the Event is an EndDocument event
     pub fn is_end_document(&self) -> bool {
-        match self {
-            Self::EndDocument { .. } => true,
-            _ => false,
-        }
+        matches!(self, Self::EndDocument { .. })
     }
 }
 

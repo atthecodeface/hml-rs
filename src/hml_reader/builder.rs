@@ -114,7 +114,7 @@ impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
         &mut self,
         ns_stack: &mut NamespaceStack,
     ) -> Result<R, Event<Span<R::Position>>> {
-        let attributes = std::mem::replace(&mut self.attributes, Attributes::default());
+        let attributes = std::mem::take(&mut self.attributes);
         let tag = ReaderError::of_markup_result(
             self.open_tag.span,
             Tag::new(

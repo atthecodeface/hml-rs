@@ -202,8 +202,8 @@ mod test_infrastructure {
         let mut namespace_stack = NamespaceStack::new(&mut namespace);
         namespace_stack.add_null_ns();
         let mut reader = StringReader::new(s);
-        let mut lexer = Lexer::new();
-        let mut parser: Parser<StringReader> = Parser::new();
+        let mut lexer = Lexer::default();
+        let mut parser: Parser<StringReader> = Parser::default();
         let mut errors = Vec::new();
         loop {
             let t = parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader));

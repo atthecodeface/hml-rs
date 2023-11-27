@@ -1,26 +1,9 @@
-/*a Copyright
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-@file    error.rs
-@brief   Errors for markup
- */
-
 //a Result
 //tp Result
 /// The [Result] type is a result with an error type of [crate::Error]
 pub type Result<T> = std::result::Result<T, Error>;
 
+//tp Error
 /// Error for all HML
 #[derive(Debug)]
 pub enum Error {
@@ -30,12 +13,13 @@ pub enum Error {
     Msg(String),
 }
 
+//ip Error
 impl Error {
     //fp empty_name
     /// An error message indicating an empty name was provided, which
     /// is illegal
     pub fn empty_name<T>() -> Result<T> {
-        Err(Self::Msg(format!("empty name")))
+        Err(Self::Msg("empty name".to_string()))
     }
 
     //fp unmapped_prefix

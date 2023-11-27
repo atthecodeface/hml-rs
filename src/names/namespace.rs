@@ -73,7 +73,7 @@ impl Namespace {
     /// found, or Some(NSNameId) if it is. An empty name *is* an
     /// NSNameId::None
     pub fn find_name(&mut self, name: &str) -> Option<NSNameId> {
-        if name == "" {
+        if name.is_empty() {
             Some(NSNameId::none())
         } else {
             for (i, p) in self.names.iter().enumerate() {
@@ -90,7 +90,7 @@ impl Namespace {
     /// found, or Some(NSPrefixId) if it is. An empty name *is* an
     /// NSPrefixId::None
     pub fn find_prefix(&mut self, prefix: &str) -> Option<NSPrefixId> {
-        if prefix == "" {
+        if prefix.is_empty() {
             Some(NSPrefixId::none())
         } else {
             for (i, p) in self.prefixes.iter().enumerate() {
@@ -107,7 +107,7 @@ impl Namespace {
     /// found, or Some(NSUriId) if it is. An empty name *is* an
     /// NSUriId::None
     pub fn find_uri(&mut self, uri: &str) -> Option<NSUriId> {
-        if uri == "" {
+        if uri.is_empty() {
             Some(NSUriId::none())
         } else {
             for (i, p) in self.uris.iter().enumerate() {

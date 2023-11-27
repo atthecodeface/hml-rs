@@ -190,8 +190,7 @@ impl<'ns> NamespaceStack<'ns> {
     /// Create a new [NamespaceStack], mutably borrowing the
     /// [Namespace] for its lifetime
     pub fn new(namespaces: &'ns mut Namespace) -> Self {
-        let mut frames = Vec::new();
-        frames.push(NamespaceStackFrame::default());
+        let frames = vec![NamespaceStackFrame::default()];
         let mut s = Self { namespaces, frames };
         if s.uses_xmlns() {
             s.add_default_xmls();
@@ -275,9 +274,8 @@ impl<'ns> NamespaceStack<'ns> {
     pub fn find_mapping(&self, prefix_id: NSPrefixId) -> Option<NSUriId> {
         let n = self.frames.len();
         for i in 0..n {
-            match self.frames[n - 1 - i].find_mapping(prefix_id) {
-                Some(uri_id) => return Some(*uri_id),
-                _ => (),
+            if let Some(uri_id) = self.frames[n - 1 - i].find_mapping(prefix_id) {
+                return Some(*uri_id);
             }
         }
         None
@@ -292,7 +290,7 @@ impl<'ns> NamespaceStack<'ns> {
 
     //ap iter_top_mappings
     /// Get a slice of the mappings of the topmost frame
-    pub fn iter_top_mappings<'a>(&'a self) -> NamespaceStackFrameIter<'a> {
+    pub fn iter_top_mappings(&self) -> NamespaceStackFrameIter<'_> {
         assert!(self.frames.is_empty(), "Namespace stack cannot be empty");
         self.frames.last().unwrap().iter_mappings()
     }
