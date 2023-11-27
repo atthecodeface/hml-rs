@@ -20,7 +20,7 @@ xml = ["dep:clap", "dep:xml-rs"]
 version = "0.4.0"
 
 [dependencies.clap]
-version = "~2.27.0"
+version = "~4.4"
 optional = true
 
 [dependencies.xml-rs]

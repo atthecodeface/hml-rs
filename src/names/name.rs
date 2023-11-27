@@ -133,15 +133,6 @@ impl Name {
 #[cfg(feature = "xml")]
 //ip Name
 impl Name {
-    //mp as_xml_owned_name
-    /// Get an [xml::name::OwnedName] from this Name
-    pub fn as_xml_owned_name(&self, ns: &NamespaceStack) -> xml::name::OwnedName {
-        if self.has_prefix() {
-            xml::name::Name::prefixed(ns.name_str(self.name), ns.prefix_str(self.prefix)).to_owned()
-        } else {
-            xml::name::Name::local(ns.name_str(self.name)).to_owned()
-        }
-    }
     //mp as_xml_name
     /// Get an [xml::name::OwnedName] from this Name
     pub fn as_xml_name<'a>(&'a self, ns: &'a NamespaceStack) -> xml::name::Name<'a> {

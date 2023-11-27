@@ -41,6 +41,7 @@ impl TagExtra {
 /// A parser, using a file position provided
 ///
 pub struct Parser<R: Reader> {
+    version: usize,
     pending_eof: bool,
     start_emitted: bool,
     end_emitted: bool,
@@ -64,6 +65,7 @@ impl<R: Reader> Parser<R> {
     /// Returns a new lexer with default state.
     pub fn new() -> Self {
         Parser {
+            version: 100,
             start_emitted: false,
             end_emitted: false,
             finished: false,
@@ -76,6 +78,13 @@ impl<R: Reader> Parser<R> {
             start_element_building: false,
             token_pos: R::Position::none(),
         }
+    }
+
+    //mp set_version
+    #[inline]
+    pub fn set_version(mut self, version: usize) -> Self {
+        self.version = version;
+        self
     }
 
     //mi pop_tag_stack
@@ -173,8 +182,16 @@ impl<R: Reader> Parser<R> {
             self.token_pos = *token.get_span().end();
             match token.token_type() {
                 TokenType::Comment => {
-                    let content = Vec::from(token.take_contents());
-                    Ok(Some(Event::comment(*token.get_span(), content)))
+                    let mut lengths = Vec::new();
+                    let mut s = String::new();
+                    for (i, c) in token.take_contents().into_iter().enumerate() {
+                        lengths.push(c.len());
+                        if i > 0 {
+                            s.push('\n');
+                        }
+                        s += &c;
+                    }
+                    Ok(Some(Event::comment(*token.get_span(), s, lengths)))
                 }
                 TokenType::TagOpen => {
                     let span = *token.get_span();
@@ -263,7 +280,7 @@ impl<R: Reader> Parser<R> {
             if !self.start_emitted {
                 self.start_emitted = true;
                 let span = Span::new_at(&self.token_pos);
-                return Ok(Event::start_document(span, 100));
+                return Ok(Event::start_document(span, self.version));
             } else if self.finished {
                 return ReaderError::no_more_events();
             } else if self.end_emitted {

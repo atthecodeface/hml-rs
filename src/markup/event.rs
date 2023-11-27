@@ -129,8 +129,12 @@ pub enum Event<F: Span> {
     Comment {
         /// The span of the comment
         span: F,
-        /// One string per line of the comment
-        data: Vec<String>,
+        /// One string containing *all* the lines of comment (separated by \n)
+        ///
+        /// The last line does not have \n appended, so single line comments have no newline
+        data: String,
+        /// Length of each original comment line (not including any additional \n)
+        lengths: Vec<usize>,
     },
 }
 
@@ -162,8 +166,12 @@ impl<F: Span> Event<F> {
 
     //fp comment
     /// Create an event of a vec of comment strings
-    pub fn comment(span: F, data: Vec<String>) -> Self {
-        Self::Comment { span, data }
+    pub fn comment(span: F, data: String, lengths: Vec<usize>) -> Self {
+        Self::Comment {
+            span,
+            data,
+            lengths,
+        }
     }
 
     //fp content
@@ -273,6 +281,55 @@ impl<F: Span> Event<F> {
         match self {
             Self::EndDocument { .. } => true,
             _ => false,
+        }
+    }
+}
+
+//a If xml_rs is included
+use crate::names::{Namespace, NamespaceStack};
+#[cfg(feature = "xml")]
+//ip <F: Span> Event<F>
+impl<F: Span> Event<F> {
+    //mp as_xml_writer
+    /// Get an [xml::writer::OwnedName] from this Name
+    pub fn as_xml_writer<'a>(
+        &'a self,
+        ns: &'a NamespaceStack,
+    ) -> Option<xml::writer::XmlEvent<'a>> {
+        use Event::*;
+        match self {
+            StartDocument { version, .. } => {
+                let version = if *version == 100 {
+                    xml::common::XmlVersion::Version10
+                } else {
+                    xml::common::XmlVersion::Version11
+                };
+                Some(xml::writer::XmlEvent::StartDocument {
+                    version,
+                    encoding: None,
+                    standalone: None,
+                })
+            }
+            StartElement { tag, .. } => {
+                let name = tag.name.as_xml_name(ns);
+                let mut x = xml::writer::XmlEvent::start_element(name);
+                for a in tag.attributes.attributes() {
+                    let attr_name = a.name.as_xml_name(ns);
+                    x = x.attr(attr_name, &a.value);
+                }
+                Some(x.into())
+            }
+            EndElement { .. } => Some(xml::writer::XmlEvent::end_element().into()),
+            EndDocument { .. } => None,
+            Content { data, .. } => Some(xml::writer::XmlEvent::characters(data)),
+            ProcessingInstruction { name, data, .. } => {
+                let name = ns.name_str(*name);
+                Some(xml::writer::XmlEvent::processing_instruction(
+                    name,
+                    data.as_ref().map(|x| x.as_str()),
+                ))
+            }
+            Comment { data, .. } => Some(xml::writer::XmlEvent::comment(data)),
         }
     }
 }
