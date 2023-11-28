@@ -94,7 +94,7 @@ pub fn escape_required(bytes: &[u8], char_set: usize, i: usize, n: usize) -> Opt
 //fp escape
 /// Return Some(string) if escaping is needed (given char_set), else None
 pub fn escape(s: &str, char_set: usize) -> Option<String> {
-    // Note that s.len is the length in bytes, not in utf8 characters
+    // Note that n == s.len is the length in bytes, not in utf8 characters
     let n = s.len();
     let bytes = s.as_bytes();
     for i in 0..n {
