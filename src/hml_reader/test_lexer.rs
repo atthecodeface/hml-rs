@@ -3,7 +3,6 @@
 //a Test
 #[cfg(test)]
 mod tests {
-    // use super::super::types::*;
     use crate::hml_reader::Lexer;
     use crate::string::Reader;
     #[test]

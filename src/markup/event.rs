@@ -48,7 +48,11 @@ pub enum EventType {
     Content,
     /// A processing instruction
     ProcessingInstruction,
-    /// A comment consisting a a Vec of Strings, one per line of the comment
+    /// A comment consisting of a String, with new lines *between* comment lines
+    ///
+    /// There is no trailing newline unless the last line was blank
+    /// (in which case that new line separates the last-but-one-line
+    /// from an empty last line)
     Comment,
 }
 
@@ -266,7 +270,7 @@ impl<F: Span> Event<F> {
 //ip <F: Span> Event<F>
 impl<F: Span> Event<F> {
     //mp as_xml_writer
-    /// Get an [xml::writer::OwnedName] from this Name
+    /// Get an [xml::writer::XmlEvent<'a>] from this Name
     pub fn as_xml_writer<'a>(
         &'a self,
         ns: &'a NamespaceStack,
@@ -305,6 +309,57 @@ impl<F: Span> Event<F> {
                 ))
             }
             Comment { data, .. } => Some(xml::writer::XmlEvent::comment(data)),
+        }
+    }
+
+    //mp as_xml_reader
+    /// Get an [xml::reader::XmlEvent<'a>] from this Name
+    pub fn as_xml_reader(
+        &self,
+        ns: &NamespaceStack,
+        _fill_namespaces: bool,
+    ) -> Option<xml::reader::XmlEvent> {
+        use Event::*;
+        match self {
+            StartDocument { version, .. } => {
+                let version = if *version == 100 {
+                    xml::common::XmlVersion::Version10
+                } else {
+                    xml::common::XmlVersion::Version11
+                };
+                Some(xml::reader::XmlEvent::StartDocument {
+                    version,
+                    encoding: "UTF8".to_string(),
+                    standalone: None,
+                })
+            }
+            StartElement { tag, .. } => {
+                let name = tag.name.as_xml_name(ns).to_owned();
+                let namespace = xml::namespace::Namespace::empty();
+                let mut attributes = Vec::new();
+                for a in tag.attributes.attributes() {
+                    let attr_name = a.name.as_xml_name(ns).to_owned();
+                    attributes.push(xml::attribute::OwnedAttribute::new(attr_name, &a.value));
+                }
+                Some(xml::reader::XmlEvent::StartElement {
+                    name,
+                    namespace,
+                    attributes,
+                })
+            }
+            EndElement { name, .. } => Some(xml::reader::XmlEvent::EndElement {
+                name: name.as_xml_name(ns).to_owned(),
+            }),
+            EndDocument { .. } => Some(xml::reader::XmlEvent::EndDocument),
+            Content { data, .. } => Some(xml::reader::XmlEvent::Characters(data.clone())),
+            ProcessingInstruction { name, data, .. } => {
+                let name = ns.name_str(*name);
+                Some(xml::reader::XmlEvent::ProcessingInstruction {
+                    name: name.to_string(),
+                    data: data.clone(),
+                })
+            }
+            Comment { data, .. } => Some(xml::reader::XmlEvent::Comment(data.to_string())),
         }
     }
 }
