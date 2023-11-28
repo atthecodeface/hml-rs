@@ -21,4 +21,4 @@ mod traits;
 //a Exports
 pub use error::{ReaderError, Result};
 pub use span::Span;
-pub use traits::{Character, Error, Position, Reader};
+pub use traits::{Character, Position, Reader};

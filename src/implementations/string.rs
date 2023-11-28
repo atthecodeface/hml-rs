@@ -113,17 +113,6 @@ impl std::fmt::Display for Character {
 #[derive(Debug)]
 pub struct Error();
 
-//ip reader::Error for Error
-impl reader::Error for Error {
-    type Position = Position;
-    fn write_without_span(&self, _f: &mut dyn std::fmt::Write) -> std::fmt::Result {
-        Ok(())
-    }
-    fn borrow_span(&self) -> Option<&reader::Span<Position>> {
-        None
-    }
-}
-
 //ip std::error::Error for Error
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
