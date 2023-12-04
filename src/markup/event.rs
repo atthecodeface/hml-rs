@@ -1,6 +1,7 @@
 //a Imports
-use crate::names::{NSNameId, Name, NamespaceStack, Tag};
 use lexer_rs::{PosnInCharStream, StreamCharSpan};
+
+use crate::names::{NSNameId, Name, NamespaceStack, Tag};
 
 //a Content
 //tp ContentType

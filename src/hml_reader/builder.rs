@@ -1,7 +1,7 @@
 //a Imports
 use crate::markup::Event;
 use crate::names::{Attributes, Name, NamespaceStack, Tag};
-use crate::reader::{Position, Reader, ReaderError, Span};
+use crate::reader::{Reader, ReaderError, Span};
 
 type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 

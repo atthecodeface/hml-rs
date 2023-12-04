@@ -15,14 +15,12 @@ positions.
 
 //a Imports
 mod error;
-// mod span;
 mod traits;
 
 //a Exports
 pub use error::{ReaderError, Result};
-// pub use span::Span;
 
 // P must be lexer_rs::PosnInCharStream;
 pub type Span<P> = lexer_rs::StreamCharSpan<P>;
 
-pub use traits::{Character, Position, Reader};
+pub use traits::{Character, Reader};

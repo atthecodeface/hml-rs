@@ -33,7 +33,7 @@
 //a Imports
 use super::Token;
 use crate::reader;
-use crate::reader::{Character, Position, Reader};
+use crate::reader::{Character, Reader};
 
 //a Result
 //ti Result

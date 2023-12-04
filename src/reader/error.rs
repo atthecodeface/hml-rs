@@ -1,5 +1,5 @@
 //a Imports
-use super::{Position, Reader, Span};
+use super::{Reader, Span};
 use thiserror::Error;
 
 //a Result

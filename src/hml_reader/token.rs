@@ -237,7 +237,7 @@ fn parse_comment_line<L, P>(
 ) -> (Vec<(P, P)>, Option<P>)
 where
     L: lexer_rs::Lexer<State = P> + lexer_rs::CharStream<P>,
-    P: lexer_rs::PosnInCharStream + crate::reader::Position,
+    P: lexer_rs::PosnInCharStream,
 {
     let (posn, _) = lexer.do_while(*posn, ch, &|_, ch| (ch != '\n') && ch.is_whitespace());
     let Some(ch) = lexer.peek_at(&posn) else {
@@ -272,7 +272,7 @@ fn parse_comment<L, P>(
 // ) -> Result<Option<(P, Token<P>)>, crate::reader::ReaderError<P, E>>
 where
     L: lexer_rs::Lexer<State = P> + lexer_rs::CharStream<P>,
-    P: lexer_rs::PosnInCharStream + crate::reader::Position,
+    P: lexer_rs::PosnInCharStream,
     //     E: std::fmt::Debug,
 {
     let (comment_end, opt_start_n_span) = lexer.fold(posn, ch, vec![], &parse_comment_line);
@@ -300,20 +300,13 @@ fn parse_whitespace<L, P>(
 ) -> Result<Option<(P, Token<P>)>, lexer_rs::SimpleParseError<P>>
 where
     L: lexer_rs::Lexer<State = P> + lexer_rs::CharStream<P>,
-    P: lexer_rs::PosnInCharStream + crate::reader::Position,
+    P: lexer_rs::PosnInCharStream,
 {
     let (end, Some((start, _n))) = lexer.do_while(posn, ch, &|_, ch| ch.is_whitespace()) else {
         return Ok(None);
     };
     let token = Token::whitespace(crate::reader::Span::new(start, end));
     Ok(Some((end, token)))
-}
-
-//ip impl Position for StreamCharPos
-impl crate::reader::Position for lexer_rs::StreamCharPos<lexer_rs::LineColumn> {
-    fn none() -> Self {
-        Self::default()
-    }
 }
 
 //fi parse_name
@@ -324,7 +317,7 @@ fn parse_name<L, P>(
 ) -> Result<Option<(P, String)>, lexer_rs::SimpleParseError<P>>
 where
     L: lexer_rs::Lexer<State = P> + lexer_rs::CharStream<P>,
-    P: lexer_rs::PosnInCharStream + crate::reader::Position,
+    P: lexer_rs::PosnInCharStream,
 {
     let Some(ch) = lexer.peek_at(&posn) else {
         return Ok(None);
@@ -345,7 +338,7 @@ fn parse_namespace_name<L, P>(
 ) -> Result<Option<(P, String, String)>, lexer_rs::SimpleParseError<P>>
 where
     L: lexer_rs::Lexer<State = P> + lexer_rs::CharStream<P>,
-    P: lexer_rs::PosnInCharStream + crate::reader::Position,
+    P: lexer_rs::PosnInCharStream,
 {
     let Some((end_name, name)) = parse_name(lexer, posn)? else {
         return Ok(None);
@@ -370,7 +363,7 @@ fn parse_tag<L, P>(
 ) -> Result<Option<(P, Token<P>)>, lexer_rs::SimpleParseError<P>>
 where
     L: lexer_rs::Lexer<State = P> + lexer_rs::CharStream<P>,
-    P: lexer_rs::PosnInCharStream + crate::reader::Position,
+    P: lexer_rs::PosnInCharStream,
 {
     let (hash_end, Some((start, hash_count))) = lexer.do_while(posn, ch, &|_, ch| ch == '#') else {
         return Ok(None);
@@ -428,7 +421,7 @@ fn parse_quoted_string<L, P>(
 ) -> Result<Option<(P, String)>, lexer_rs::SimpleParseError<P>>
 where
     L: lexer_rs::Lexer<State = P> + lexer_rs::CharStream<P>,
-    P: lexer_rs::PosnInCharStream + crate::reader::Position,
+    P: lexer_rs::PosnInCharStream,
 {
     let start = posn;
     let mut last_posn = start;
@@ -472,7 +465,7 @@ fn parse_character_string<L, P>(
 ) -> Result<Option<(P, Token<P>)>, lexer_rs::SimpleParseError<P>>
 where
     L: lexer_rs::Lexer<State = P> + lexer_rs::CharStream<P>,
-    P: lexer_rs::PosnInCharStream + crate::reader::Position,
+    P: lexer_rs::PosnInCharStream,
 {
     let start = posn;
     let (posn, hash_count) = {

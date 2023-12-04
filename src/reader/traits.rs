@@ -1,11 +1,4 @@
-//a Position trait
-//tt Position
-/// The trait required for a position within a stream for a Reader
-pub trait Position: Clone + Copy + std::fmt::Debug + std::fmt::Display {
-    /// A position that is unset
-    fn none() -> Self;
-}
-
+//a Character trait
 //tt Character
 /// The trait required for a character returned by a Reader
 ///

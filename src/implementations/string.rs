@@ -120,12 +120,11 @@ impl<'a> Reader<'a> {
                 line_starts.push(b + 1);
             }
         }
-        use crate::reader::Position;
         Self {
             s,
             chars: s.chars(),
             line_starts,
-            n: Position::none(),
+            n: Position::default(),
         }
     }
 
