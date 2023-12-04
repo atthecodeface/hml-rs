@@ -33,7 +33,7 @@
 //a Imports
 use super::Token;
 use crate::reader;
-use crate::reader::{Character, Reader};
+use crate::reader::Reader;
 
 //a Result
 //ti Result
@@ -104,7 +104,7 @@ pub fn is_name(ch: char) -> bool {
 ///
 //tp Lexer
 pub struct Lexer<R: Reader> {
-    read_ahead: Option<R::Char>,
+    read_ahead: Option<Option<char>>,
     token_start: R::Position,
 }
 
@@ -122,7 +122,7 @@ impl<R: Reader> Default for Lexer<R> {
 impl<R: Reader> Lexer<R> {
     //mi peek_char - peek at the next character
     /// Peek character
-    fn peek_char(&mut self, reader: &mut R) -> Result<R, R::Char> {
+    fn peek_char(&mut self, reader: &mut R) -> Result<R, Option<char>> {
         match self.read_ahead {
             Some(x) => Ok(x),
             None => match reader.next_char() {
@@ -139,7 +139,7 @@ impl<R: Reader> Lexer<R> {
     /// Peek character - EOF not permitted
     fn peek_char_no_eof(&mut self, reader: &mut R) -> Result<R, char> {
         let ch = self.peek_char(reader)?;
-        if let Some(ch) = ch.as_char() {
+        if let Some(ch) = ch {
             Ok(ch)
         } else {
             // assume eof for now
@@ -156,7 +156,7 @@ impl<R: Reader> Lexer<R> {
 
     //mi get_char - get the next character
     /// Get character
-    fn get_char(&mut self, reader: &mut R) -> Result<R, R::Char> {
+    fn get_char(&mut self, reader: &mut R) -> Result<R, Option<char>> {
         match self.read_ahead {
             Some(x) => {
                 self.read_ahead = None;
@@ -173,7 +173,7 @@ impl<R: Reader> Lexer<R> {
     /// Get character - EOF not permitted
     fn get_char_no_eof(&mut self, reader: &mut R) -> Result<R, char> {
         let ch = self.get_char(reader)?;
-        if let Some(ch) = ch.as_char() {
+        if let Some(ch) = ch {
             Ok(ch)
         } else {
             // assume eof for now
@@ -183,7 +183,7 @@ impl<R: Reader> Lexer<R> {
 
     //mi unget_char - return a character to the (single char) readahead buffer
     /// Unget a character - put it into the readahead
-    fn unget_char(&mut self, char: R::Char) {
+    fn unget_char(&mut self, char: Option<char>) {
         self.read_ahead = Some(char);
     }
 
@@ -193,7 +193,7 @@ impl<R: Reader> Lexer<R> {
     fn skip_whitespace(&mut self, reader: &mut R, include_nl: bool) -> Result<R, ()> {
         loop {
             let ch = self.get_char(reader)?;
-            if let Some(c) = ch.as_char() {
+            if let Some(c) = ch {
                 if !c.is_whitespace() {
                     self.unget_char(ch);
                     break;
@@ -216,7 +216,7 @@ impl<R: Reader> Lexer<R> {
         let mut s = String::new();
         loop {
             let ch = self.get_char(reader)?;
-            if let Some(c) = ch.as_char() {
+            if let Some(c) = ch {
                 if is_newline(c) {
                     break;
                 }
@@ -241,7 +241,7 @@ impl<R: Reader> Lexer<R> {
         self.skip_whitespace(reader, true)?;
         self.token_start = *reader.borrow_pos();
         let ch = self.peek_char(reader)?;
-        if let Some(ch) = ch.as_char() {
+        if let Some(ch) = ch {
             let mut span = reader::Span::new_at(reader.borrow_pos());
             if ch == ';' {
                 self.get_char(reader)?; // drop the semicolon
@@ -250,7 +250,7 @@ impl<R: Reader> Lexer<R> {
                     comment_strings.push(self.read_line(reader)?);
                     span = span.end_at(reader.borrow_pos());
                     self.skip_whitespace(reader, false)?;
-                    if self.peek_char(reader)?.as_char() != Some(';') {
+                    if self.peek_char(reader)? != Some(';') {
                         break;
                     }
                     self.get_char(reader)?;
@@ -258,7 +258,7 @@ impl<R: Reader> Lexer<R> {
                 return Ok(Token::comment(span, comment_strings));
             } else if is_hash(ch) {
                 let hash_count = self.read_hash_sequence(reader)?;
-                let ch = self.peek_char(reader)?.as_char().unwrap();
+                let ch = self.peek_char(reader)?.unwrap();
                 if is_quote(ch) {
                     self.drop_peek();
                     let s = self.read_quoted_string(reader, ch, hash_count, false)?;
@@ -274,10 +274,10 @@ impl<R: Reader> Lexer<R> {
                 return Ok(Token::characters(span, s));
             } else if ch == 'r' {
                 self.drop_peek();
-                if let Some(ch) = self.peek_char(reader)?.as_char() {
+                if let Some(ch) = self.peek_char(reader)? {
                     if is_hash(ch) {
                         let hash_count = self.read_hash_sequence(reader)?;
-                        let ch = self.peek_char(reader)?.as_char().unwrap();
+                        let ch = self.peek_char(reader)?.unwrap();
                         if is_quote(ch) {
                             self.drop_peek();
                             let s = self.read_quoted_string(reader, ch, hash_count, true)?;
@@ -340,7 +340,7 @@ impl<R: Reader> Lexer<R> {
         s.push(ch);
         loop {
             let ch = self.get_char(reader)?;
-            match ch.as_char() {
+            match ch {
                 Some(c) if is_name(c) => {
                     s.push(c);
                 }
@@ -364,7 +364,7 @@ impl<R: Reader> Lexer<R> {
     ) -> Result<R, (String, String)> {
         let name = self.read_name(reader, initial_ch)?;
         let ch = self.peek_char(reader)?;
-        match ch.as_char() {
+        match ch {
             Some(':') => {
                 self.drop_peek();
                 let name2 = self.read_name(reader, None)?;
@@ -404,7 +404,7 @@ impl<R: Reader> Lexer<R> {
     ) -> Result<R, Token<R::Position>> {
         let (ns, name) = self.read_namespace_name(reader, None)?;
         let result = {
-            match self.peek_char(reader)?.as_char() {
+            match self.peek_char(reader)? {
                 Some('{') => {
                     self.drop_peek();
                     span = span.end_at(reader.borrow_pos());
@@ -421,7 +421,7 @@ impl<R: Reader> Lexer<R> {
                 }
             }
         };
-        match self.peek_char(reader)?.as_char() {
+        match self.peek_char(reader)? {
             Some(ch) => {
                 if ch.is_whitespace() {
                     Ok(result)
@@ -448,7 +448,7 @@ impl<R: Reader> Lexer<R> {
             let mut result = String::new();
             loop {
                 let ch = self.get_char(reader)?;
-                match ch.as_char() {
+                match ch {
                     Some(c) => {
                         if c.is_whitespace() {
                             self.unget_char(ch);

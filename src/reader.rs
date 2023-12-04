@@ -23,4 +23,4 @@ pub use error::{ReaderError, Result};
 // P must be lexer_rs::PosnInCharStream;
 pub type Span<P> = lexer_rs::StreamCharSpan<P>;
 
-pub use traits::{Character, Reader};
+pub use traits::Reader;

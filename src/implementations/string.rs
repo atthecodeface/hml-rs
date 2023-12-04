@@ -19,39 +19,6 @@ use crate::reader;
 use lexer_rs::PosnInCharStream;
 pub type Position = lexer_rs::StreamCharPos<lexer_rs::LineColumn>;
 
-//a Character
-//tp Character
-/// A character as returned by the reader; this can be none or EOF as
-/// well as a UTF8 character
-#[derive(Copy, Clone, Debug)]
-pub struct Character(Option<char>);
-
-//ip Reader::Character for Character
-impl reader::Character for Character {
-    fn is_eof(&self) -> bool {
-        self.0.is_none()
-    }
-    fn is_not_rdy(&self) -> bool {
-        false
-    }
-    fn as_char(&self) -> Option<char> {
-        self.0
-    }
-}
-
-//ip Display for Character
-impl std::fmt::Display for Character {
-    //mp fmt
-    /// Format for humans
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        use std::fmt::Write;
-        match self.0 {
-            Some(c) => f.write_char(c),
-            None => write!(f, "None"),
-        }
-    }
-}
-
 //a Error
 //tp Error
 /// Error returned by a string
@@ -141,16 +108,15 @@ impl<'a> Reader<'a> {
 //ip reader::Reader for Reader
 impl<'a> reader::Reader for Reader<'a> {
     type Position = Position;
-    type Char = Character;
     type Error = Error;
 
-    fn next_char(&mut self) -> std::result::Result<Character, Self::Error> {
+    fn next_char(&mut self) -> std::result::Result<Option<char>, Self::Error> {
         match self.chars.next() {
             Some(ch) => {
                 self.n = self.n.move_by_char(ch);
-                Ok(Character(Some(ch)))
+                Ok(Some(ch))
             }
-            None => Ok(Character(None)),
+            None => Ok(None),
         }
     }
     fn borrow_pos(&self) -> &Self::Position {
