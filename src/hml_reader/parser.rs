@@ -5,7 +5,6 @@ use super::{CloseTag, OpenTag, StackElement, Token, TokenType};
 use crate::markup::{ContentType, Event};
 use crate::names::NamespaceStack;
 use crate::reader::{Reader, ReaderError};
-type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
 //ti TagExtra
@@ -40,8 +39,17 @@ pub struct Parser<R: Reader> {
 }
 
 // These only work for R:Reader but Rust cannot handle that cleanly yet in the type itself
-pub type EventResult<R> = Result<R, Event<<R as Reader>::Position>>;
-pub type OptEventResult<R> = Result<R, Option<Event<<R as Reader>::Position>>>;
+type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
+
+/// crate::reader::Result<T, P, E> = std::result::Result<T, ReaderError<P, E>>;
+pub type EventResult<R> = std::result::Result<
+    Event<<R as Reader>::Position>,
+    ReaderError<<R as Reader>::Position, <R as Reader>::Error>,
+>;
+pub type OptEventResult<R> = std::result::Result<
+    Option<Event<<R as Reader>::Position>>,
+    ReaderError<<R as Reader>::Position, <R as Reader>::Error>,
+>;
 
 //ip Default for Parser
 impl<R: Reader> Default for Parser<R> {
