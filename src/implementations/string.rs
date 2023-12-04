@@ -16,8 +16,11 @@ use crate::reader;
 ///
 /// This is used to derive a context for errors, for example; a Span
 /// is between two Positions.
+use lexer_rs::PosnInCharStream;
+pub type Position = lexer_rs::StreamCharPos<lexer_rs::LineColumn>;
+// want this to be StreamCharPos<LineColumn>StreamCharPos<LineColumn>
 #[derive(Copy, Clone, Debug)]
-pub struct Position {
+pub struct OldPosition {
     /// Byte offset within the u8 forming the string
     byte: usize,
     /// Line number
@@ -27,7 +30,7 @@ pub struct Position {
 }
 
 //ip Position
-impl Position {
+impl OldPosition {
     //fp new
     /// Create a new Position
     fn new(byte: usize, line_num: usize, char_num: usize) -> Self {
@@ -36,6 +39,16 @@ impl Position {
             line_num,
             char_num,
         }
+    }
+
+    //fp line
+    fn line(&self) -> usize {
+        self.line_num
+    }
+
+    //fp column
+    fn column(&self) -> usize {
+        self.char_num
     }
 
     //fp move_by_char
@@ -52,7 +65,7 @@ impl Position {
 }
 
 //ip Reader::Position for Position
-impl reader::Position for Position {
+impl reader::Position for OldPosition {
     //fp none
     fn none() -> Self {
         Self::new(0, 1, 0)
@@ -60,7 +73,7 @@ impl reader::Position for Position {
 }
 
 //ip Display for Position
-impl std::fmt::Display for Position {
+impl std::fmt::Display for OldPosition {
     //mp fmt
     /// Format for humans
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -185,6 +198,113 @@ impl<'a> Reader<'a> {
         Ok(Self::new(contents))
     }
 
+    //zz All done
+}
+
+//ip reader::Reader for Reader
+impl<'a> reader::Reader for Reader<'a> {
+    type Position = Position;
+    type Char = Character;
+    type Error = Error;
+
+    fn next_char(&mut self) -> std::result::Result<Character, Self::Error> {
+        match self.chars.next() {
+            Some(ch) => {
+                self.n = self.n.move_by_char(ch);
+                Ok(Character(Some(ch)))
+            }
+            None => Ok(Character(None)),
+        }
+    }
+    fn borrow_pos(&self) -> &Self::Position {
+        &self.n
+    }
+
+    /*
+        fn fmt_context(
+            &self,
+            f: &mut dyn std::fmt::Write,
+            start: &Position,
+            end: &Position,
+        ) -> std::fmt::Result {
+            if start.line_num == end.line_num
+                || (start.line_num + 1 == end.line_num && end.char_num == 0)
+            {
+                let mut num_chars = {
+                    if start.line_num == end.line_num {
+                        end.char_num - start.char_num
+                    } else {
+                        self.line_length(start.line_num)
+                    }
+                };
+                if num_chars == 0 {
+                    num_chars = 1;
+                }
+                if start.line_num > 1 {
+                    write!(f, "    |  ")?;
+                    self.fmt_line(f, start.line_num - 1)?;
+                    writeln!(f)?;
+                }
+                write!(f, "{:4}|  ", start.line_num)?;
+                self.fmt_line(f, start.line_num)?;
+                writeln!(f)?;
+                write!(f, "    |  ")?;
+                for _ in 1..(start.char_num) {
+                    f.write_char(' ')?;
+                }
+                for _ in 0..num_chars {
+                    f.write_char('^')?;
+                }
+                writeln!(f)?;
+                write!(f, "    |  ")?;
+                writeln!(f)?;
+                Ok(())
+            } else {
+                let first_line = if start.line_num > 1 {
+                    start.line_num - 1
+                } else {
+                    start.line_num
+                };
+                let last_line = if end.char_num == 0 {
+                    end.line_num
+                } else {
+                    end.line_num + 1
+                };
+                let num_lines = if last_line <= first_line {
+                    1
+                } else {
+                    last_line + 1 - first_line
+                };
+                let (start_skip, end_skip) = if num_lines > 4 {
+                    (4, num_lines - 4)
+                } else {
+                    (1, 0)
+                };
+                let mut ellipses_output = false;
+                for i in 0..num_lines {
+                    let l = first_line + i;
+                    if i >= start_skip && i <= end_skip {
+                        if !ellipses_output {
+                            writeln!(f, "    |...")?;
+                            ellipses_output = true;
+                        }
+                        continue;
+                    }
+                    if l >= start.line_num && l <= end.line_num {
+                        write!(f, "{:4}|  ", l)?;
+                    } else {
+                        write!(f, "    |  ")?;
+                    }
+                    self.fmt_line(f, l)?;
+                    writeln!(f)?;
+                }
+                Ok(())
+            }
+        }
+    */
+}
+
+impl<'a> lexer_rs::FmtContext<Position> for Reader<'a> {
     //fi fmt_line
     /// Output a single line of text to a formatter given a line number
     fn fmt_line(&self, f: &mut dyn std::fmt::Write, line_num: usize) -> std::fmt::Result {
@@ -207,108 +327,5 @@ impl<'a> Reader<'a> {
         let ofs1 = self.line_starts[line_num - 1];
         let ofs2 = self.line_starts[line_num];
         ofs2 - ofs1
-    }
-
-    //zz All done
-}
-
-//ip reader::Reader for Reader
-impl<'a> reader::Reader for Reader<'a> {
-    type Position = Position;
-    type Char = Character;
-    type Error = Error;
-
-    fn next_char(&mut self) -> std::result::Result<Character, Self::Error> {
-        match self.chars.next() {
-            Some(ch) => {
-                self.n.move_by_char(ch);
-                Ok(Character(Some(ch)))
-            }
-            None => Ok(Character(None)),
-        }
-    }
-    fn borrow_pos(&self) -> &Self::Position {
-        &self.n
-    }
-
-    fn fmt_context(
-        &self,
-        f: &mut dyn std::fmt::Write,
-        start: &Position,
-        end: &Position,
-    ) -> std::fmt::Result {
-        if start.line_num == end.line_num
-            || (start.line_num + 1 == end.line_num && end.char_num == 0)
-        {
-            let mut num_chars = {
-                if start.line_num == end.line_num {
-                    end.char_num - start.char_num
-                } else {
-                    self.line_length(start.line_num)
-                }
-            };
-            if num_chars == 0 {
-                num_chars = 1;
-            }
-            if start.line_num > 1 {
-                write!(f, "    |  ")?;
-                self.fmt_line(f, start.line_num - 1)?;
-                writeln!(f)?;
-            }
-            write!(f, "{:4}|  ", start.line_num)?;
-            self.fmt_line(f, start.line_num)?;
-            writeln!(f)?;
-            write!(f, "    |  ")?;
-            for _ in 1..(start.char_num) {
-                f.write_char(' ')?;
-            }
-            for _ in 0..num_chars {
-                f.write_char('^')?;
-            }
-            writeln!(f)?;
-            write!(f, "    |  ")?;
-            writeln!(f)?;
-            Ok(())
-        } else {
-            let first_line = if start.line_num > 1 {
-                start.line_num - 1
-            } else {
-                start.line_num
-            };
-            let last_line = if end.char_num == 0 {
-                end.line_num
-            } else {
-                end.line_num + 1
-            };
-            let num_lines = if last_line <= first_line {
-                1
-            } else {
-                last_line + 1 - first_line
-            };
-            let (start_skip, end_skip) = if num_lines > 4 {
-                (4, num_lines - 4)
-            } else {
-                (1, 0)
-            };
-            let mut ellipses_output = false;
-            for i in 0..num_lines {
-                let l = first_line + i;
-                if i >= start_skip && i <= end_skip {
-                    if !ellipses_output {
-                        writeln!(f, "    |...")?;
-                        ellipses_output = true;
-                    }
-                    continue;
-                }
-                if l >= start.line_num && l <= end.line_num {
-                    write!(f, "{:4}|  ", l)?;
-                } else {
-                    write!(f, "    |  ")?;
-                }
-                self.fmt_line(f, l)?;
-                writeln!(f)?;
-            }
-            Ok(())
-        }
     }
 }

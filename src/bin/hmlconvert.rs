@@ -63,6 +63,15 @@ fn main() {
                     }
                     Err(e) => {
                         eprintln!("Parse error {e}");
+                        use lexer_rs::FmtContext;
+                        if let Some(span) = e.borrow_span() {
+                            let mut s = String::new();
+                            reader
+                                .fmt_context(&mut s, span.start(), span.end())
+                                .unwrap();
+                            use std::io::Write;
+                            writeln!(&mut std::io::stderr(), "{}", s);
+                        }
                         break;
                     }
                 }

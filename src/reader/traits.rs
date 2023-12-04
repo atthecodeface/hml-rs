@@ -23,7 +23,7 @@ pub trait Character: Clone + Copy + std::fmt::Debug + std::fmt::Display + 'stati
 
 //tt Reader
 /// The trait required of a Reader for its use with markup language readers
-pub trait Reader: std::fmt::Debug {
+pub trait Reader: std::fmt::Debug + lexer_rs::FmtContext<Self::Position> {
     /// The type of the position within a stream for the reader, used by its Error and Span
     type Position: Position;
     /// The type of characters returned by the reader
@@ -35,21 +35,23 @@ pub trait Reader: std::fmt::Debug {
     fn next_char(&mut self) -> std::result::Result<Self::Char, Self::Error>;
     /// Borrow the position of the reader's next character
     fn borrow_pos(&self) -> &Self::Position;
-    /// Write with the formatter the context indicated by start and end
-    ///
-    /// This is used to display errors for users, using the context of
-    /// the error provided by its span
-    ///
-    /// If end == start then the context is a single point in the reader stream
-    ///
-    /// If the reader has the stream contents for the span from the
-    /// two positions then it may output that content
-    ///
-    /// If the reader does not have any stream contents then this can do nothing
-    fn fmt_context(
-        &self,
-        f: &mut dyn std::fmt::Write,
-        start: &Self::Position,
-        end: &Self::Position,
-    ) -> std::fmt::Result;
+    /*
+        /// Write with the formatter the context indicated by start and end
+        ///
+        /// This is used to display errors for users, using the context of
+        /// the error provided by its span
+        ///
+        /// If end == start then the context is a single point in the reader stream
+        ///
+        /// If the reader has the stream contents for the span from the
+        /// two positions then it may output that content
+        ///
+        /// If the reader does not have any stream contents then this can do nothing
+        fn fmt_context(
+            &self,
+            f: &mut dyn std::fmt::Write,
+            start: &Self::Position,
+            end: &Self::Position,
+        ) -> std::fmt::Result;
+    */
 }
