@@ -30,7 +30,7 @@ pub struct Parser<R: Reader> {
     end_emitted: bool,
     finished: bool,
     tag_depth: usize,
-    tag_stack: Vec<StackElement<R, TagExtra>>,
+    tag_stack: Vec<StackElement<R::Position, TagExtra>>,
     pending_open_tag: Option<OpenTag<R::Position, TagExtra>>,
     pending_close_tag: Option<CloseTag<R::Position, TagExtra>>,
     pending_token: Option<Token<R::Position>>,

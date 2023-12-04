@@ -1,16 +1,16 @@
 //a Imports
+use lexer_rs::{PosnInCharStream, StreamCharSpan};
+
 use crate::markup::Event;
 use crate::names::{Attributes, Name, NamespaceStack, Tag};
 use crate::reader::{Reader, ReaderError, Span};
-
-type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
 //tp OpenTag
 #[derive(Clone, Debug)]
 pub struct OpenTag<P, T>
 where
-    P: lexer_rs::PosnInCharStream,
+    P: PosnInCharStream,
     T: std::fmt::Debug,
 {
     span: Span<P>,
@@ -22,7 +22,7 @@ where
 //ip OpenTag
 impl<P, T> OpenTag<P, T>
 where
-    P: lexer_rs::PosnInCharStream,
+    P: PosnInCharStream,
     T: std::fmt::Debug,
 {
     pub fn new(span: Span<P>, prefix: String, name: String, extra: T) -> Self {
@@ -42,7 +42,7 @@ where
 #[derive(Clone, Debug)]
 pub struct CloseTag<P, T>
 where
-    P: lexer_rs::PosnInCharStream,
+    P: PosnInCharStream,
     T: std::fmt::Debug,
 {
     span: Span<P>,
@@ -54,7 +54,7 @@ where
 //ip CloseTag
 impl<P, T> CloseTag<P, T>
 where
-    P: lexer_rs::PosnInCharStream,
+    P: PosnInCharStream,
     T: std::fmt::Debug,
 {
     pub fn new(
@@ -91,19 +91,27 @@ where
 ///
 /// When the content completes an [EndElement] can be issued
 #[derive(Debug)]
-pub struct StackElement<R: Reader, T: std::fmt::Debug> {
+pub struct StackElement<P, T>
+where
+    P: PosnInCharStream,
+    T: std::fmt::Debug,
+{
     parent_depth: usize,
-    open_tag: OpenTag<R::Position, T>,
+    open_tag: OpenTag<P, T>,
     tag_name: Name,
     attributes: Attributes,
 }
 
 //ii StackElement
-impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
+impl<P, T> StackElement<P, T>
+where
+    P: PosnInCharStream,
+    T: std::fmt::Debug,
+{
     pub fn new(
         ns_stack: &mut NamespaceStack,
         parent_depth: usize,
-        open_tag: OpenTag<R::Position, T>,
+        open_tag: OpenTag<P, T>,
     ) -> Self {
         ns_stack.push_frame();
 
@@ -116,20 +124,21 @@ impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
             attributes,
         }
     }
-    pub fn add_attribute(
+    pub fn add_attribute<E: std::fmt::Debug>(
         &mut self,
-        span: Span<R::Position>,
+        span: Span<P>,
         ns_stack: &mut NamespaceStack,
         prefix: &str,
         name: &str,
         value: String,
-    ) -> Result<R, ()> {
+    ) -> std::result::Result<(), ReaderError<P, E>> {
         ReaderError::of_markup_result(span, self.attributes.add(ns_stack, prefix, name, value))
     }
-    pub fn as_start_element(
+
+    pub fn as_start_element<E: std::fmt::Debug>(
         &mut self,
         ns_stack: &mut NamespaceStack,
-    ) -> Result<R, Event<R::Position>> {
+    ) -> std::result::Result<Event<P>, ReaderError<P, E>> {
         let attributes = std::mem::take(&mut self.attributes);
         let tag = ReaderError::of_markup_result(
             self.open_tag.span,
@@ -146,8 +155,8 @@ impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
     pub fn as_end_element(
         &self,
         ns_stack: &mut NamespaceStack,
-        span: &lexer_rs::StreamCharSpan<R::Position>,
-    ) -> (Event<R::Position>, usize) {
+        span: &StreamCharSpan<P>,
+    ) -> (Event<P>, usize) {
         ns_stack.pop_frame();
         (Event::end_element(*span, self.tag_name), self.parent_depth)
     }
