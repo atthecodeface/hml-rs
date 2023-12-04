@@ -8,7 +8,11 @@ type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Read
 //a Internal types
 //tp OpenTag
 #[derive(Clone, Debug)]
-pub struct OpenTag<P: Position, T: std::fmt::Debug> {
+pub struct OpenTag<P, T>
+where
+    P: lexer_rs::PosnInCharStream,
+    T: std::fmt::Debug,
+{
     span: Span<P>,
     prefix: String,
     name: String,
@@ -16,7 +20,11 @@ pub struct OpenTag<P: Position, T: std::fmt::Debug> {
 }
 
 //ip OpenTag
-impl<P: Position, T: std::fmt::Debug> OpenTag<P, T> {
+impl<P, T> OpenTag<P, T>
+where
+    P: lexer_rs::PosnInCharStream,
+    T: std::fmt::Debug,
+{
     pub fn new(span: Span<P>, prefix: String, name: String, extra: T) -> Self {
         Self {
             span,
@@ -32,7 +40,11 @@ impl<P: Position, T: std::fmt::Debug> OpenTag<P, T> {
 
 //tp CloseTag
 #[derive(Clone, Debug)]
-pub struct CloseTag<P: Position, T: std::fmt::Debug> {
+pub struct CloseTag<P, T>
+where
+    P: lexer_rs::PosnInCharStream,
+    T: std::fmt::Debug,
+{
     span: Span<P>,
     #[allow(dead_code)]
     name: Name,
@@ -40,7 +52,11 @@ pub struct CloseTag<P: Position, T: std::fmt::Debug> {
 }
 
 //ip CloseTag
-impl<P: Position, T: std::fmt::Debug> CloseTag<P, T> {
+impl<P, T> CloseTag<P, T>
+where
+    P: lexer_rs::PosnInCharStream,
+    T: std::fmt::Debug,
+{
     pub fn new(
         span: Span<P>,
         ns_stack: &mut NamespaceStack,
@@ -113,7 +129,7 @@ impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
     pub fn as_start_element(
         &mut self,
         ns_stack: &mut NamespaceStack,
-    ) -> Result<R, Event<Span<R::Position>>> {
+    ) -> Result<R, Event<R::Position>> {
         let attributes = std::mem::take(&mut self.attributes);
         let tag = ReaderError::of_markup_result(
             self.open_tag.span,
@@ -130,8 +146,8 @@ impl<R: Reader, T: std::fmt::Debug> StackElement<R, T> {
     pub fn as_end_element(
         &self,
         ns_stack: &mut NamespaceStack,
-        span: &Span<R::Position>,
-    ) -> (Event<Span<R::Position>>, usize) {
+        span: &lexer_rs::StreamCharSpan<R::Position>,
+    ) -> (Event<R::Position>, usize) {
         ns_stack.pop_frame();
         (Event::end_element(*span, self.tag_name), self.parent_depth)
     }

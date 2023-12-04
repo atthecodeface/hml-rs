@@ -1,8 +1,10 @@
 //a Imports
+use lexer_rs::{PosnInCharStream, StreamCharSpan};
+
 use super::{CloseTag, OpenTag, StackElement, Token, TokenType};
 use crate::markup::{ContentType, Event};
 use crate::names::NamespaceStack;
-use crate::reader::{Position, Reader, ReaderError, Span};
+use crate::reader::{Reader, ReaderError};
 type Result<R, T> = crate::reader::Result<T, <R as Reader>::Position, <R as Reader>::Error>;
 
 //a Internal types
@@ -38,8 +40,8 @@ pub struct Parser<R: Reader> {
 }
 
 // These only work for R:Reader but Rust cannot handle that cleanly yet in the type itself
-pub type EventResult<R> = Result<R, Event<Span<<R as Reader>::Position>>>;
-pub type OptEventResult<R> = Result<R, Option<Event<Span<<R as Reader>::Position>>>>;
+pub type EventResult<R> = Result<R, Event<<R as Reader>::Position>>;
+pub type OptEventResult<R> = Result<R, Option<Event<<R as Reader>::Position>>>;
 
 //ip Default for Parser
 impl<R: Reader> Default for Parser<R> {
@@ -56,7 +58,7 @@ impl<R: Reader> Default for Parser<R> {
             pending_close_tag: None,
             pending_token: None,
             start_element_building: false,
-            token_pos: R::Position::none(),
+            token_pos: R::Position::default(),
         }
     }
 }
@@ -77,7 +79,7 @@ impl<R: Reader> Parser<R> {
     fn pop_tag_stack(
         &mut self,
         ns_stack: &mut NamespaceStack,
-        span: &Span<R::Position>,
+        span: &StreamCharSpan<R::Position>,
     ) -> OptEventResult<R> {
         assert!(!self.tag_stack.is_empty());
         let (e, depth) = self.tag_stack.pop().unwrap().as_end_element(ns_stack, span);
@@ -91,7 +93,7 @@ impl<R: Reader> Parser<R> {
             self.end_emitted = true;
             Ok(None)
         } else {
-            let span = Span::new_at(&self.token_pos);
+            let span = StreamCharSpan::new_at(&self.token_pos);
             self.pop_tag_stack(ns_stack, &span)
         }
     }
@@ -107,7 +109,7 @@ impl<R: Reader> Parser<R> {
     ) -> OptEventResult<R> {
         // If there are tags that are close the current element at the top of the stack
         if self.tag_depth > 0 {
-            let span = Span::new_at(close_tag.span().start());
+            let span = StreamCharSpan::new_at(close_tag.span().start());
             self.pending_close_tag = Some(close_tag);
             self.pop_tag_stack(ns_stack, &span)
         } else {
@@ -128,7 +130,7 @@ impl<R: Reader> Parser<R> {
         open_tag: OpenTag<R::Position, TagExtra>,
     ) -> OptEventResult<R> {
         if open_tag.extra.depth <= self.tag_depth {
-            let span = Span::new_at(open_tag.span().start());
+            let span = StreamCharSpan::new_at(open_tag.span().start());
             self.pending_open_tag = Some(open_tag);
             self.pop_tag_stack(ns_stack, &span)
         } else if open_tag.extra.depth == self.tag_depth + 1 {
@@ -265,13 +267,13 @@ impl<R: Reader> Parser<R> {
         loop {
             if !self.start_emitted {
                 self.start_emitted = true;
-                let span = Span::new_at(&self.token_pos);
+                let span = StreamCharSpan::new_at(&self.token_pos);
                 return Ok(Event::start_document(span, self.version));
             } else if self.finished {
                 return ReaderError::no_more_events();
             } else if self.end_emitted {
                 self.finished = true;
-                let span = Span::new_at(&self.token_pos);
+                let span = StreamCharSpan::new_at(&self.token_pos);
                 return Ok(Event::end_document(span));
             }
             if let Some(event) = {

@@ -18,68 +18,6 @@ use crate::reader;
 /// is between two Positions.
 use lexer_rs::PosnInCharStream;
 pub type Position = lexer_rs::StreamCharPos<lexer_rs::LineColumn>;
-// want this to be StreamCharPos<LineColumn>StreamCharPos<LineColumn>
-#[derive(Copy, Clone, Debug)]
-pub struct OldPosition {
-    /// Byte offset within the u8 forming the string
-    byte: usize,
-    /// Line number
-    line_num: usize,
-    /// Character offset within the line
-    char_num: usize,
-}
-
-//ip Position
-impl OldPosition {
-    //fp new
-    /// Create a new Position
-    fn new(byte: usize, line_num: usize, char_num: usize) -> Self {
-        Self {
-            byte,
-            line_num,
-            char_num,
-        }
-    }
-
-    //fp line
-    fn line(&self) -> usize {
-        self.line_num
-    }
-
-    //fp column
-    fn column(&self) -> usize {
-        self.char_num
-    }
-
-    //fp move_by_char
-    /// Move on by a character
-    fn move_by_char(&mut self, ch: char) {
-        self.byte += ch.len_utf8();
-        if ch == '\n' {
-            self.line_num += 1;
-            self.char_num = 0;
-        } else {
-            self.char_num += 1;
-        }
-    }
-}
-
-//ip Reader::Position for Position
-impl reader::Position for OldPosition {
-    //fp none
-    fn none() -> Self {
-        Self::new(0, 1, 0)
-    }
-}
-
-//ip Display for Position
-impl std::fmt::Display for OldPosition {
-    //mp fmt
-    /// Format for humans
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "line {} character {}", self.line_num, self.char_num)
-    }
-}
 
 //a Character
 //tp Character
@@ -219,91 +157,9 @@ impl<'a> reader::Reader for Reader<'a> {
     fn borrow_pos(&self) -> &Self::Position {
         &self.n
     }
-
-    /*
-        fn fmt_context(
-            &self,
-            f: &mut dyn std::fmt::Write,
-            start: &Position,
-            end: &Position,
-        ) -> std::fmt::Result {
-            if start.line_num == end.line_num
-                || (start.line_num + 1 == end.line_num && end.char_num == 0)
-            {
-                let mut num_chars = {
-                    if start.line_num == end.line_num {
-                        end.char_num - start.char_num
-                    } else {
-                        self.line_length(start.line_num)
-                    }
-                };
-                if num_chars == 0 {
-                    num_chars = 1;
-                }
-                if start.line_num > 1 {
-                    write!(f, "    |  ")?;
-                    self.fmt_line(f, start.line_num - 1)?;
-                    writeln!(f)?;
-                }
-                write!(f, "{:4}|  ", start.line_num)?;
-                self.fmt_line(f, start.line_num)?;
-                writeln!(f)?;
-                write!(f, "    |  ")?;
-                for _ in 1..(start.char_num) {
-                    f.write_char(' ')?;
-                }
-                for _ in 0..num_chars {
-                    f.write_char('^')?;
-                }
-                writeln!(f)?;
-                write!(f, "    |  ")?;
-                writeln!(f)?;
-                Ok(())
-            } else {
-                let first_line = if start.line_num > 1 {
-                    start.line_num - 1
-                } else {
-                    start.line_num
-                };
-                let last_line = if end.char_num == 0 {
-                    end.line_num
-                } else {
-                    end.line_num + 1
-                };
-                let num_lines = if last_line <= first_line {
-                    1
-                } else {
-                    last_line + 1 - first_line
-                };
-                let (start_skip, end_skip) = if num_lines > 4 {
-                    (4, num_lines - 4)
-                } else {
-                    (1, 0)
-                };
-                let mut ellipses_output = false;
-                for i in 0..num_lines {
-                    let l = first_line + i;
-                    if i >= start_skip && i <= end_skip {
-                        if !ellipses_output {
-                            writeln!(f, "    |...")?;
-                            ellipses_output = true;
-                        }
-                        continue;
-                    }
-                    if l >= start.line_num && l <= end.line_num {
-                        write!(f, "{:4}|  ", l)?;
-                    } else {
-                        write!(f, "    |  ")?;
-                    }
-                    self.fmt_line(f, l)?;
-                    writeln!(f)?;
-                }
-                Ok(())
-            }
-        }
-    */
 }
 
+//ip lexer_rs::FmtContext<Position> for Reader<'a>
 impl<'a> lexer_rs::FmtContext<Position> for Reader<'a> {
     //fi fmt_line
     /// Output a single line of text to a formatter given a line number

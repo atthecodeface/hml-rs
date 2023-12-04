@@ -113,7 +113,7 @@ impl<R: Reader> Default for Lexer<R> {
     fn default() -> Self {
         Lexer {
             read_ahead: None,
-            token_start: R::Position::none(),
+            token_start: R::Position::default(),
         }
     }
 }

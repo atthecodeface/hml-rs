@@ -8,9 +8,9 @@ mod test_infrastructure {
     use crate::names::{Name, Namespace, NamespaceStack, Tag};
     use crate::reader::ReaderError;
     use crate::string::Error as StringError;
-    use crate::string::Position as StringPosition;
     use crate::string::Reader as StringReader;
-    type Event = crate::markup::Event<crate::reader::Span<StringPosition>>;
+    type StringPosition = lexer_rs::StreamCharPos<lexer_rs::LineColumn>;
+    type Event = crate::markup::Event<StringPosition>;
 
     //a Expectation
     //tp Expectation

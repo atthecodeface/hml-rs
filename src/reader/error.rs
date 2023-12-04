@@ -16,7 +16,7 @@ pub type Result<T, P, E> = std::result::Result<T, ReaderError<P, E>>;
 #[derive(Debug, Error)]
 pub enum ReaderError<P, E>
 where
-    P: Position,
+    P: lexer_rs::PosnInCharStream,
     E: std::fmt::Debug,
 {
     /// An error from the underlying reader
@@ -87,7 +87,7 @@ where
 //ip ReaderError
 impl<P, E> ReaderError<P, E>
 where
-    P: Position,
+    P: lexer_rs::PosnInCharStream,
     E: std::fmt::Debug,
 {
     //fp of_reader
@@ -170,7 +170,7 @@ where
 //ip ReaderError<P, E>
 impl<P, E> ReaderError<P, E>
 where
-    P: Position,
+    P: lexer_rs::PosnInCharStream,
     E: std::fmt::Debug,
 {
     /// Borrow a span if it has one

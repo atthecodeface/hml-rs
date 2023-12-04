@@ -1,6 +1,6 @@
 //a Imports
-use crate::markup::Span;
 use crate::names::{NSNameId, Name, NamespaceStack, Tag};
+use lexer_rs::{PosnInCharStream, StreamCharSpan};
 
 //a Content
 //tp ContentType
@@ -59,11 +59,14 @@ pub enum EventType {
 //tp Event
 /// A markup event occupying a [Span] on a stream
 #[derive(Debug)]
-pub enum Event<F: Span> {
+pub enum Event<P>
+where
+    P: PosnInCharStream,
+{
     /// The start of the document
     StartDocument {
         /// File position of start of the document
-        span: F,
+        span: StreamCharSpan<P>,
         /// Version as an integer - 100 for 1.00, etc
         version: usize,
     },
@@ -71,13 +74,13 @@ pub enum Event<F: Span> {
     /// The end of the document
     EndDocument {
         /// File position of end of the document
-        span: F,
+        span: StreamCharSpan<P>,
     },
 
     /// Denotes a beginning of an XML element.
     StartElement {
         /// The span of the start element 'tag'
-        span: F,
+        span: StreamCharSpan<P>,
         /// The actual tag (prefix, URI, name, attributes)
         tag: Tag,
     },
@@ -85,7 +88,7 @@ pub enum Event<F: Span> {
     /// Denotes an end of an XML element.
     EndElement {
         /// The span of the end element 'tag'
-        span: F,
+        span: StreamCharSpan<P>,
         /// The (prefix, URI, name) of the element (equal to the same
         /// value as the StartElement that this closes)
         name: Name,
@@ -94,7 +97,7 @@ pub enum Event<F: Span> {
     /// Denotes one part of the content of an element
     Content {
         /// The span of the content
-        span: F,
+        span: StreamCharSpan<P>,
         /// The type of the content: raw, whitespace, needs unescaping
         ctype: ContentType,
         /// The string content
@@ -104,7 +107,7 @@ pub enum Event<F: Span> {
     /// Denotes an XML processing instruction.
     ProcessingInstruction {
         /// The span of the PI
-        span: F,
+        span: StreamCharSpan<P>,
         /// A NSNameId within the namespace that is the name of the processing instruction
         name: NSNameId,
         /// An optional value for the processing instruction
@@ -114,7 +117,7 @@ pub enum Event<F: Span> {
     /// Denotes a comment.
     Comment {
         /// The span of the comment
-        span: F,
+        span: StreamCharSpan<P>,
         /// One string containing *all* the lines of comment (separated by \n)
         ///
         /// The last line does not have \n appended, so single line comments have no newline
@@ -125,34 +128,37 @@ pub enum Event<F: Span> {
 }
 
 //ip Event
-impl<F: Span> Event<F> {
+impl<P> Event<P>
+where
+    P: PosnInCharStream,
+{
     //fp start_document
     /// Create a StartDocument event
-    pub fn start_document(span: F, version: usize) -> Self {
+    pub fn start_document(span: StreamCharSpan<P>, version: usize) -> Self {
         Self::StartDocument { span, version }
     }
 
     //fp end_document
     /// Create an EndDocument event
-    pub fn end_document(span: F) -> Self {
+    pub fn end_document(span: StreamCharSpan<P>) -> Self {
         Self::EndDocument { span }
     }
 
     //fp start_element
     /// Create a StartElement event with a given [Tag]
-    pub fn start_element(span: F, tag: Tag) -> Self {
+    pub fn start_element(span: StreamCharSpan<P>, tag: Tag) -> Self {
         Self::StartElement { span, tag }
     }
 
     //fp end_element
     /// Create an EndElement event with a given [Name]
-    pub fn end_element(span: F, name: Name) -> Self {
+    pub fn end_element(span: StreamCharSpan<P>, name: Name) -> Self {
         Self::EndElement { span, name }
     }
 
     //fp comment
     /// Create an event of a vec of comment strings
-    pub fn comment(span: F, data: String, lengths: Vec<usize>) -> Self {
+    pub fn comment(span: StreamCharSpan<P>, data: String, lengths: Vec<usize>) -> Self {
         Self::Comment {
             span,
             data,
@@ -162,25 +168,25 @@ impl<F: Span> Event<F> {
 
     //fp content
     /// Create an event of content of the given type
-    pub fn content(span: F, ctype: ContentType, data: String) -> Self {
+    pub fn content(span: StreamCharSpan<P>, ctype: ContentType, data: String) -> Self {
         Self::Content { span, ctype, data }
     }
 
     //fp content_raw
     /// Create an event of raw content
-    pub fn content_raw(span: F, data: String) -> Self {
+    pub fn content_raw(span: StreamCharSpan<P>, data: String) -> Self {
         Self::content(span, ContentType::Raw, data)
     }
 
     //fp content_int
     /// Create an event of interpretable content
-    pub fn content_int(span: F, data: String) -> Self {
+    pub fn content_int(span: StreamCharSpan<P>, data: String) -> Self {
         Self::content(span, ContentType::Interpretable, data)
     }
 
     //fp content_ws
     /// Create an event of whitespace content
-    pub fn content_ws(span: F, data: String) -> Self {
+    pub fn content_ws(span: StreamCharSpan<P>, data: String) -> Self {
         Self::content(span, ContentType::Whitespace, data)
     }
 
@@ -200,7 +206,7 @@ impl<F: Span> Event<F> {
 
     //mp borrow_span
     /// Borrow the span of the event, for logging or errors etc.
-    pub fn borrow_span(&self) -> &F {
+    pub fn borrow_span(&self) -> &StreamCharSpan<P> {
         match self {
             Self::StartDocument { span, .. } => span,
             Self::EndDocument { span, .. } => span,
@@ -267,8 +273,11 @@ impl<F: Span> Event<F> {
 
 //a If xml_rs is included
 #[cfg(feature = "xml")]
-//ip <F: Span> Event<F>
-impl<F: Span> Event<F> {
+//ip Event
+impl<P> Event<P>
+where
+    P: PosnInCharStream,
+{
     //mp as_xml_writer
     /// Get an [xml::writer::XmlEvent<'a>] from this Name
     pub fn as_xml_writer<'a>(

@@ -1,5 +1,5 @@
 //a Imports
-use crate::reader::{Position, Span};
+use lexer_rs::{PosnInCharStream, StreamCharSpan};
 use std::collections::VecDeque;
 
 //a Token
@@ -32,8 +32,11 @@ pub enum TokenType {
 }
 
 #[derive(Debug, Clone)]
-pub struct Token<P: Position> {
-    span: Span<P>,
+pub struct Token<P>
+where
+    P: PosnInCharStream,
+{
+    span: StreamCharSpan<P>,
     tt: TokenType,
     contents: VecDeque<String>,
     depth: usize,
@@ -41,9 +44,12 @@ pub struct Token<P: Position> {
 }
 
 //ip Token
-impl<P: Position> Token<P> {
+impl<P> Token<P>
+where
+    P: PosnInCharStream,
+{
     //fi new
-    fn new(span: Span<P>, tt: TokenType, depth: usize, boxed: bool) -> Self {
+    fn new(span: StreamCharSpan<P>, tt: TokenType, depth: usize, boxed: bool) -> Self {
         let contents = VecDeque::new();
         Self {
             span,
@@ -61,28 +67,28 @@ impl<P: Position> Token<P> {
     }
 
     //fp open_boxed
-    pub fn open_boxed(span: Span<P>, ns: String, name: String, depth: usize) -> Self {
+    pub fn open_boxed(span: StreamCharSpan<P>, ns: String, name: String, depth: usize) -> Self {
         Self::new(span, TokenType::TagOpen, depth, true)
             .add_string(ns)
             .add_string(name)
     }
 
     //fp open
-    pub fn open(span: Span<P>, ns: String, name: String, depth: usize) -> Self {
+    pub fn open(span: StreamCharSpan<P>, ns: String, name: String, depth: usize) -> Self {
         Self::new(span, TokenType::TagOpen, depth, false)
             .add_string(ns)
             .add_string(name)
     }
 
     //fp close
-    pub fn close(span: Span<P>, ns: String, name: String, depth: usize) -> Self {
+    pub fn close(span: StreamCharSpan<P>, ns: String, name: String, depth: usize) -> Self {
         Self::new(span, TokenType::TagClose, depth, false)
             .add_string(ns)
             .add_string(name)
     }
 
     //fp attribute
-    pub fn attribute(span: Span<P>, ns: String, name: String, value: String) -> Self {
+    pub fn attribute(span: StreamCharSpan<P>, ns: String, name: String, value: String) -> Self {
         Self::new(span, TokenType::Attribute, 0, false)
             .add_string(ns)
             .add_string(name)
@@ -91,7 +97,7 @@ impl<P: Position> Token<P> {
 
     //fp comment
     /// Consumes the Vec<String>
-    pub fn comment(span: Span<P>, strings: Vec<String>) -> Self {
+    pub fn comment(span: StreamCharSpan<P>, strings: Vec<String>) -> Self {
         let mut t = Self::new(span, TokenType::Comment, 0, false);
         for s in strings {
             t = t.add_string(s);
@@ -101,22 +107,22 @@ impl<P: Position> Token<P> {
 
     //fp whitespace
     /// Whitespace that should in general be ignored
-    pub fn whitespace(span: Span<P>) -> Self {
+    pub fn whitespace(span: StreamCharSpan<P>) -> Self {
         Self::new(span, TokenType::Whitespace, 0, false)
     }
 
     //fp raw_characters
-    pub fn raw_characters(span: Span<P>, s: String) -> Self {
+    pub fn raw_characters(span: StreamCharSpan<P>, s: String) -> Self {
         Self::new(span, TokenType::RawCharacters, 0, false).add_string(s)
     }
 
     //fp characters
-    pub fn characters(span: Span<P>, s: String) -> Self {
+    pub fn characters(span: StreamCharSpan<P>, s: String) -> Self {
         Self::new(span, TokenType::Characters, 0, false).add_string(s)
     }
 
     //fp eof
-    pub fn eof(span: Span<P>) -> Self {
+    pub fn eof(span: StreamCharSpan<P>) -> Self {
         Self::new(span, TokenType::EndOfFile, 0, false)
     }
 
@@ -126,7 +132,7 @@ impl<P: Position> Token<P> {
     }
 
     //mp get_span
-    pub fn get_span(&self) -> &Span<P> {
+    pub fn get_span(&self) -> &StreamCharSpan<P> {
         &self.span
     }
 
@@ -167,24 +173,27 @@ impl<P: Position> Token<P> {
 }
 
 //ip std::fmt::Display for Token
-impl<P: Position> std::fmt::Display for Token<P> {
+impl<P> std::fmt::Display for Token<P>
+where
+    P: PosnInCharStream,
+{
     //mp fmt - format a `Token` for display
     /// Display the `Token` in a human-readable form
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         use TokenType::*;
         match self.tt {
-            Comment => write!(f, "[{}]; ...", self.span),
+            Comment => write!(f, "[{:?}]; ...", self.span),
             TagOpen => {
                 if self.boxed {
                     write!(
                         f,
-                        "[{}]#<{}>{}:{}{{",
+                        "[{:?}]#<{}>{}:{}{{",
                         self.span, self.depth, self.contents[0], self.contents[1]
                     )
                 } else {
                     write!(
                         f,
-                        "[{}]#<{}>{}:{}",
+                        "[{:?}]#<{}>{}:{}",
                         self.span, self.depth, self.contents[0], self.contents[1]
                     )
                 }
@@ -192,27 +201,27 @@ impl<P: Position> std::fmt::Display for Token<P> {
             TagClose => {
                 write!(
                     f,
-                    "[{}]#<{}>{}:{}}}",
+                    "[{:?}]#<{}>{}:{}}}",
                     self.span, self.depth, self.contents[0], self.contents[1]
                 )
             }
             Attribute => {
                 write!(
                     f,
-                    "[{}]{}:{}={}",
+                    "[{:?}]{}:{}={}",
                     self.span, self.contents[0], self.contents[1], self.contents[2]
                 )
             }
             Characters => {
-                write!(f, "[{}]chars ...", self.span)
+                write!(f, "[{:?}]chars ...", self.span)
             }
             RawCharacters => {
-                write!(f, "[{}]rawchars ...", self.span)
+                write!(f, "[{:?}]rawchars ...", self.span)
             }
             Whitespace => {
-                write!(f, "[{}]whitespace", self.span)
+                write!(f, "[{:?}]whitespace", self.span)
             }
-            EndOfFile => write!(f, "[{}]<eof>", self.span),
+            EndOfFile => write!(f, "[{:?}]<eof>", self.span),
         }
     }
 }
@@ -277,7 +286,7 @@ where
     Ok(Some((
         comment_end,
         Token::comment(
-            crate::reader::Span::between(&comment_start, &comment_end),
+            crate::reader::Span::new(comment_start, comment_end),
             comment_strings,
         ),
     )))
@@ -296,7 +305,7 @@ where
     let (end, Some((start, _n))) = lexer.do_while(posn, ch, &|_, ch| ch.is_whitespace()) else {
         return Ok(None);
     };
-    let token = Token::whitespace(crate::reader::Span::between(&start, &end));
+    let token = Token::whitespace(crate::reader::Span::new(start, end));
     Ok(Some((end, token)))
 }
 
@@ -376,16 +385,16 @@ where
         match opt_ch {
             Some('{') => {
                 let end_posn = lexer.consumed_char(end_name, '{');
-                let span = crate::reader::Span::between(&start, &end_posn);
+                let span = crate::reader::Span::new(start, end_posn);
                 (end_posn, Token::open_boxed(span, ns, name, hash_count))
             }
             Some('}') => {
                 let end_posn = lexer.consumed_char(end_name, '}');
-                let span = crate::reader::Span::between(&start, &end_posn);
+                let span = crate::reader::Span::new(start, end_posn);
                 (end_posn, Token::close(span, ns, name, hash_count))
             }
             _ => {
-                let span = crate::reader::Span::between(&start, &end_name);
+                let span = crate::reader::Span::new(start, end_name);
                 (end_name, Token::open(span, ns, name, hash_count))
             }
         }
@@ -489,7 +498,7 @@ where
     else {
         return Ok(None);
     };
-    let span = crate::reader::Span::between(&start, &posn);
+    let span = crate::reader::Span::new(start, posn);
     Ok(Some((posn, Token::characters(span, quoted_string))))
 }
 
