@@ -23,19 +23,22 @@ impl TagExtra {
 //tp Parser
 /// A parser, using a file position provided
 ///
-pub struct Parser<R: Reader> {
+pub struct Parser<P>
+where
+    P: PosnInCharStream,
+{
     version: usize,
     pending_eof: bool,
     start_emitted: bool,
     end_emitted: bool,
     finished: bool,
     tag_depth: usize,
-    tag_stack: Vec<StackElement<R::Position, TagExtra>>,
-    pending_open_tag: Option<OpenTag<R::Position, TagExtra>>,
-    pending_close_tag: Option<CloseTag<R::Position, TagExtra>>,
-    pending_token: Option<Token<R::Position>>,
+    tag_stack: Vec<StackElement<P, TagExtra>>,
+    pending_open_tag: Option<OpenTag<P, TagExtra>>,
+    pending_close_tag: Option<CloseTag<P, TagExtra>>,
+    pending_token: Option<Token<P>>,
     start_element_building: bool,
-    token_pos: R::Position,
+    token_pos: P,
 }
 
 // These only work for R:Reader but Rust cannot handle that cleanly yet in the type itself
@@ -43,7 +46,10 @@ pub type EventResult<P, E> = std::result::Result<Event<P>, ReaderError<P, E>>;
 pub type OptEventResult<P, E> = std::result::Result<Option<Event<P>>, ReaderError<P, E>>;
 
 //ip Default for Parser
-impl<R: Reader> Default for Parser<R> {
+impl<P> Default for Parser<P>
+where
+    P: PosnInCharStream,
+{
     fn default() -> Self {
         Parser {
             version: 100,
@@ -57,13 +63,16 @@ impl<R: Reader> Default for Parser<R> {
             pending_close_tag: None,
             pending_token: None,
             start_element_building: false,
-            token_pos: R::Position::default(),
+            token_pos: P::default(),
         }
     }
 }
 
 //ip Parser
-impl<R: Reader> Parser<R> {
+impl<P> Parser<P>
+where
+    P: PosnInCharStream,
+{
     //mp set_version
     /// Set the target XML version number - 100 for 1.00, or 110 for
     /// 1.10
@@ -75,11 +84,11 @@ impl<R: Reader> Parser<R> {
 
     //mi pop_tag_stack
     /// Pops the tag stack and returns an Event of an end of that element
-    fn pop_tag_stack(
+    fn pop_tag_stack<E: std::fmt::Debug>(
         &mut self,
         ns_stack: &mut NamespaceStack,
-        span: &StreamCharSpan<R::Position>,
-    ) -> OptEventResult<R::Position, R::Error> {
+        span: &StreamCharSpan<P>,
+    ) -> OptEventResult<P, E> {
         assert!(!self.tag_stack.is_empty());
         let (e, depth) = self.tag_stack.pop().unwrap().as_end_element(ns_stack, span);
         self.tag_depth = depth;
@@ -87,10 +96,10 @@ impl<R: Reader> Parser<R> {
     }
 
     //mi handle_pending_eof
-    fn handle_pending_eof(
+    fn handle_pending_eof<E: std::fmt::Debug>(
         &mut self,
         ns_stack: &mut NamespaceStack,
-    ) -> OptEventResult<R::Position, R::Error> {
+    ) -> OptEventResult<P, E> {
         if self.tag_stack.is_empty() {
             self.end_emitted = true;
             Ok(None)
@@ -104,11 +113,11 @@ impl<R: Reader> Parser<R> {
     /// A close tag closes all elements whose tag depth is > 0
     ///
     /// If the tag depth is 0 then the close tag should match the top of the tag stack
-    fn handle_close_tag(
+    fn handle_close_tag<E: std::fmt::Debug>(
         &mut self,
         ns_stack: &mut NamespaceStack,
-        close_tag: CloseTag<R::Position, TagExtra>,
-    ) -> OptEventResult<R::Position, R::Error> {
+        close_tag: CloseTag<P, TagExtra>,
+    ) -> OptEventResult<P, E> {
         // If there are tags that are close the current element at the top of the stack
         if self.tag_depth > 0 {
             let span = StreamCharSpan::new_at(close_tag.span().start());
@@ -126,11 +135,11 @@ impl<R: Reader> Parser<R> {
     /// If the OpenTag has a depth == current+1 then open it up
     ///
     /// If the OpenTag has a depth > current+1 then it has too much depth
-    fn handle_open_tag(
+    fn handle_open_tag<E: std::fmt::Debug>(
         &mut self,
         ns_stack: &mut NamespaceStack,
-        open_tag: OpenTag<R::Position, TagExtra>,
-    ) -> OptEventResult<R::Position, R::Error> {
+        open_tag: OpenTag<P, TagExtra>,
+    ) -> OptEventResult<P, E> {
         if open_tag.extra.depth <= self.tag_depth {
             let span = StreamCharSpan::new_at(open_tag.span().start());
             self.pending_open_tag = Some(open_tag);
@@ -153,11 +162,11 @@ impl<R: Reader> Parser<R> {
     }
 
     //mi handle_token
-    fn handle_token(
+    fn handle_token<E: std::fmt::Debug>(
         &mut self,
         ns_stack: &mut NamespaceStack,
-        mut token: Token<R::Position>,
-    ) -> OptEventResult<R::Position, R::Error> {
+        mut token: Token<P>,
+    ) -> OptEventResult<P, E> {
         if self.start_element_building && !token.is_attribute() {
             self.start_element_building = false;
             self.pending_token = Some(token);
@@ -258,16 +267,13 @@ impl<R: Reader> Parser<R> {
 
     //mp next_event
     /// next_event
-    pub fn next_event<T>(
+    pub fn next_event<T, E: std::fmt::Debug>(
         &mut self,
         ns_stack: &mut NamespaceStack,
         mut get_token: T,
-    ) -> EventResult<R::Position, R::Error>
+    ) -> EventResult<P, E>
     where
-        T: FnMut() -> std::result::Result<
-            Token<R::Position>,
-            ReaderError<<R as Reader>::Position, <R as Reader>::Error>,
-        >,
+        T: FnMut() -> std::result::Result<Token<P>, ReaderError<P, E>>,
     {
         loop {
             if !self.start_emitted {

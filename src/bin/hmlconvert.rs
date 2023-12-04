@@ -46,7 +46,7 @@ fn main() {
             let mut namespace = Namespace::new(false);
             let mut namespace_stack = NamespaceStack::new(&mut namespace);
             let mut lexer = hml_rs::hml_reader::Lexer::default();
-            let mut parser: Parser<hml_rs::string::Reader> =
+            let mut parser: Parser<lexer_rs::StreamCharPos<lexer_rs::LineColumn>> =
                 Parser::default().set_version(xml_version);
             let output = std::io::stdout();
             let mut writer = xml::writer::EmitterConfig::new()
