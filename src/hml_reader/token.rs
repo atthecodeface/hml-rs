@@ -1,6 +1,9 @@
 //a Imports
-use lexer_rs::{PosnInCharStream, StreamCharSpan};
 use std::collections::VecDeque;
+
+use lexer_rs::{PosnInCharStream, StreamCharSpan};
+
+use super::utils::*;
 
 //a Token
 //tp Token
@@ -310,7 +313,6 @@ where
 }
 
 //fi parse_name
-use crate::hml_reader::lexer::{is_name, is_name_start, is_quote};
 fn parse_name<L, P>(
     lexer: &L,
     posn: P,

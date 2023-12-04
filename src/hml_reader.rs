@@ -12,6 +12,7 @@ mod builder;
 mod lexer;
 mod parser;
 mod token;
+mod utils;
 
 mod test_lexer;
 mod test_parser;
