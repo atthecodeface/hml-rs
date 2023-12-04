@@ -130,7 +130,10 @@ impl<R: Reader> Lexer<R> {
                     self.read_ahead = Some(ch);
                     Ok(ch)
                 }
-                Err(e) => reader::ReaderError::of_reader(reader, e),
+                Err(error) => {
+                    let span = crate::reader::Span::new_at(reader.borrow_pos());
+                    Err(crate::reader::ReaderError::ReaderError { span, error })
+                }
             },
         }
     }
@@ -164,7 +167,10 @@ impl<R: Reader> Lexer<R> {
             }
             None => match reader.next_char() {
                 Ok(ch) => Ok(ch),
-                Err(e) => reader::ReaderError::of_reader(reader, e),
+                Err(error) => {
+                    let span = crate::reader::Span::new_at(reader.borrow_pos());
+                    Err(crate::reader::ReaderError::ReaderError { span, error })
+                }
             },
         }
     }

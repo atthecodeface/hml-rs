@@ -1,5 +1,5 @@
 //a Imports
-use super::{Reader, Span};
+use super::Span;
 use thiserror::Error;
 
 //a Result
@@ -90,20 +90,6 @@ where
     P: lexer_rs::PosnInCharStream,
     E: std::fmt::Debug,
 {
-    //fp of_reader
-    /// Create a given error with a [Span] of just the current reader
-    /// position
-    pub fn of_reader<T, R>(reader: &R, reader_error: E) -> Result<T, P, E>
-    where
-        R: Reader<Position = P, Error = E>,
-    {
-        let span = Span::new_at(reader.borrow_pos());
-        Err(Self::ReaderError {
-            span,
-            error: reader_error,
-        })
-    }
-
     //fp unexpected_eof
     /// Return an unexpected_eof error at the specified positions
     pub fn unexpected_eof<T>(start: &P, end: &P) -> Result<T, P, E> {

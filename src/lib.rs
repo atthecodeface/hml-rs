@@ -234,10 +234,3 @@ pub mod hml_reader;
 
 mod implementations;
 pub use implementations::string;
-
-/*
-mod types;
-mod utils;
-
-pub mod writer;
- */
