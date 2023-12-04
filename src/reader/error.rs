@@ -21,34 +21,67 @@ where
 {
     /// An error from the underlying reader
     #[error("reader error {error:?}")]
-    ReaderError { span: Span<P>, error: E },
+    ReaderError {
+        /// Span of the error
+        span: Span<P>,
+        /// Error
+        error: E,
+    },
     /// A markup error
     #[error("markup error {error}")]
     MarkupError {
+        /// Span of the error
         span: Span<P>,
+        /// Error
         error: crate::markup::Error,
     },
     /// An unexpected character
     #[error("Unexpected character '{ch}'")]
-    UnexpectedCharacter { span: Span<P>, ch: char },
+    UnexpectedCharacter {
+        /// Span of the error
+        span: Span<P>,
+        /// Character
+        ch: char,
+    },
     /// Expected a depth of N or N+1
     #[error("Expected a tag indent of at most {depth}")]
-    UnexpectedTagIndent { span: Span<P>, depth: usize },
+    UnexpectedTagIndent {
+        /// Span of the error
+        span: Span<P>,
+        /// Depth
+        depth: usize,
+    },
     /// Iterated beyond the end of the reader stream
     #[error("Attempt to parse beyond end of tokens, probably a bug")]
     BeyondEndOfTokens,
     /// Attribute provided where an attribute was not expected
     #[error("Found attribute when not expected {attr}")]
-    UnexpectedAttribute { span: Span<P>, attr: String },
+    UnexpectedAttribute {
+        /// Span of the error
+        span: Span<P>,
+        /// Attribute
+        attr: String,
+    },
     /// Newline in a quoted string
     #[error("Unexpected newline in quoted string")]
-    UnexpectedNewlineInQuotedString { span: Span<P> },
+    UnexpectedNewlineInQuotedString {
+        /// Span of the error
+        span: Span<P>,
+    },
     /// Expected an '=' for an attribute but got something else
     #[error("Expected equals, but found '{ch}'")]
-    ExpectedEquals { span: Span<P>, ch: char },
+    ExpectedEquals {
+        /// Span of the error
+        span: Span<P>,
+        /// Character
+        ch: char,
+    },
     /// EOF when it was not expected
     #[error("Unexpected EOF")]
-    UnexpectedEOF { span: Span<P> },
+    UnexpectedEOF {
+        /// Span of the error
+        span: Span<P>,
+    },
 }
 
 //ip ReaderError
@@ -134,13 +167,14 @@ where
     }
 }
 
+//ip ReaderError<P, E>
 impl<P, E> ReaderError<P, E>
 where
     P: Position,
     E: std::fmt::Debug,
 {
     /// Borrow a span if it has one
-    fn borrow_span(&self) -> Option<&Span<P>> {
+    pub fn borrow_span(&self) -> Option<&Span<P>> {
         match self {
             Self::ReaderError { span, .. } => Some(span),
             Self::MarkupError { span, .. } => Some(span),

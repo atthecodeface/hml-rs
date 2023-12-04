@@ -243,6 +243,7 @@ impl<R: Reader> Parser<R> {
                         data,
                     )))
                 }
+                TokenType::Whitespace => Ok(None),
                 TokenType::EndOfFile => {
                     self.pending_eof = true;
                     Ok(None)
