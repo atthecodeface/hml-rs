@@ -185,7 +185,7 @@ mod test_infrastructure {
         namespace_stack.add_null_ns();
         let mut reader = StringReader::new(s);
         let mut lexer = Lexer::default();
-        let mut parser: Parser<StringReader> = Parser::default();
+        let mut parser: Parser<lexer_rs::StreamCharPos<lexer_rs::LineColumn>> = Parser::default();
         let mut errors = Vec::new();
         loop {
             let t = parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader));
