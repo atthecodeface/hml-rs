@@ -235,6 +235,3 @@ pub mod markup;
 
 // Expose hml_reader::{Lexer, Parser, ReaderError}
 pub mod hml_reader;
-
-// mod implementations;
-// pub use implementations::string;
