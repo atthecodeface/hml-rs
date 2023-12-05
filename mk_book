@@ -1,0 +1,3 @@
+./target/debug/hmlconvert book3.hml > book.xml
+xsltproc -o intermediate-fo-file.fo /usr/local/opt/docbook-xsl/docbook-xsl/fo/docbook.xsl book.xml
+fop -pdf final-pdf-file.pdf -fo intermediate-fo-file.fo

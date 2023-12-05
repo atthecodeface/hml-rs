@@ -1,23 +1,6 @@
-/*a Copyright
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-@file    attribute.rs
-@brief   Markup attribute types
- */
-
 //a Imports
 use super::{Name, NamespaceStack};
+use crate::MarkupResult;
 
 //a Attribute
 //tp Attribute
@@ -41,7 +24,7 @@ impl Attribute {
         prefix: &str,
         name: &str,
         value: String,
-    ) -> crate::markup::Result<Self> {
+    ) -> MarkupResult<Self> {
         if ns_stack.uses_xmlns() {
             if prefix.is_empty() && name == "xmlns" {
                 println!("Add ns '' to be {}", value);
@@ -87,7 +70,7 @@ impl Attributes {
         prefix: &str,
         name: &str,
         value: String,
-    ) -> crate::markup::Result<()> {
+    ) -> MarkupResult<()> {
         self.attributes
             .push(Attribute::new(ns_stack, prefix, name, value)?);
         Ok(())

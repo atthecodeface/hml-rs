@@ -1,10 +1,8 @@
 //a Imports
-use lexer_rs::{PosnInCharStream, StreamCharSpan};
-
 use super::{CloseTag, OpenTag, StackElement, Token, TokenType};
 use crate::markup::{ContentType, Event};
 use crate::names::NamespaceStack;
-use crate::reader::{Reader, ReaderError};
+use crate::{HmlError, HmlResult, Posn, Span};
 
 //a Internal types
 //ti TagExtra
@@ -25,7 +23,7 @@ impl TagExtra {
 ///
 pub struct Parser<P>
 where
-    P: PosnInCharStream,
+    P: Posn,
 {
     version: usize,
     pending_eof: bool,
@@ -41,14 +39,10 @@ where
     token_pos: P,
 }
 
-// These only work for R:Reader but Rust cannot handle that cleanly yet in the type itself
-pub type EventResult<P, E> = std::result::Result<Event<P>, ReaderError<P, E>>;
-pub type OptEventResult<P, E> = std::result::Result<Option<Event<P>>, ReaderError<P, E>>;
-
 //ip Default for Parser
 impl<P> Default for Parser<P>
 where
-    P: PosnInCharStream,
+    P: Posn,
 {
     fn default() -> Self {
         Parser {
@@ -71,7 +65,7 @@ where
 //ip Parser
 impl<P> Parser<P>
 where
-    P: PosnInCharStream,
+    P: Posn,
 {
     //mp set_version
     /// Set the target XML version number - 100 for 1.00, or 110 for
@@ -84,11 +78,11 @@ where
 
     //mi pop_tag_stack
     /// Pops the tag stack and returns an Event of an end of that element
-    fn pop_tag_stack<E: std::fmt::Debug>(
+    fn pop_tag_stack(
         &mut self,
         ns_stack: &mut NamespaceStack,
-        span: &StreamCharSpan<P>,
-    ) -> OptEventResult<P, E> {
+        span: &Span<P>,
+    ) -> HmlResult<Option<Event<P>>, P> {
         assert!(!self.tag_stack.is_empty());
         let (e, depth) = self.tag_stack.pop().unwrap().as_end_element(ns_stack, span);
         self.tag_depth = depth;
@@ -96,15 +90,15 @@ where
     }
 
     //mi handle_pending_eof
-    fn handle_pending_eof<E: std::fmt::Debug>(
+    fn handle_pending_eof(
         &mut self,
         ns_stack: &mut NamespaceStack,
-    ) -> OptEventResult<P, E> {
+    ) -> HmlResult<Option<Event<P>>, P> {
         if self.tag_stack.is_empty() {
             self.end_emitted = true;
             Ok(None)
         } else {
-            let span = StreamCharSpan::new_at(&self.token_pos);
+            let span = Span::new_at(&self.token_pos);
             self.pop_tag_stack(ns_stack, &span)
         }
     }
@@ -113,14 +107,14 @@ where
     /// A close tag closes all elements whose tag depth is > 0
     ///
     /// If the tag depth is 0 then the close tag should match the top of the tag stack
-    fn handle_close_tag<E: std::fmt::Debug>(
+    fn handle_close_tag(
         &mut self,
         ns_stack: &mut NamespaceStack,
         close_tag: CloseTag<P, TagExtra>,
-    ) -> OptEventResult<P, E> {
+    ) -> HmlResult<Option<Event<P>>, P> {
         // If there are tags that are close the current element at the top of the stack
         if self.tag_depth > 0 {
-            let span = StreamCharSpan::new_at(close_tag.span().start());
+            let span = Span::new_at(close_tag.span().start());
             self.pending_close_tag = Some(close_tag);
             self.pop_tag_stack(ns_stack, &span)
         } else {
@@ -135,13 +129,13 @@ where
     /// If the OpenTag has a depth == current+1 then open it up
     ///
     /// If the OpenTag has a depth > current+1 then it has too much depth
-    fn handle_open_tag<E: std::fmt::Debug>(
+    fn handle_open_tag(
         &mut self,
         ns_stack: &mut NamespaceStack,
         open_tag: OpenTag<P, TagExtra>,
-    ) -> OptEventResult<P, E> {
+    ) -> HmlResult<Option<Event<P>>, P> {
         if open_tag.extra.depth <= self.tag_depth {
-            let span = StreamCharSpan::new_at(open_tag.span().start());
+            let span = Span::new_at(open_tag.span().start());
             self.pending_open_tag = Some(open_tag);
             self.pop_tag_stack(ns_stack, &span)
         } else if open_tag.extra.depth == self.tag_depth + 1 {
@@ -157,16 +151,19 @@ where
             Ok(None)
         } else {
             // tag with too much depth
-            ReaderError::unexpected_tag_indent(*open_tag.span(), self.tag_depth + 1)
+            HmlError::unexpected_tag_indent(*open_tag.span(), self.tag_depth + 1)
         }
     }
 
     //mi handle_token
-    fn handle_token<E: std::fmt::Debug>(
+    fn handle_token(
         &mut self,
         ns_stack: &mut NamespaceStack,
         mut token: Token<P>,
-    ) -> OptEventResult<P, E> {
+    ) -> HmlResult<Option<Event<P>>, P> {
+        if token.is_whitespace() {
+            return Ok(None);
+        }
         if self.start_element_building && !token.is_attribute() {
             self.start_element_building = false;
             self.pending_token = Some(token);
@@ -209,15 +206,12 @@ where
                     let mut args = token.take_contents();
                     let prefix = args.pop_front().unwrap();
                     let name = args.pop_front().unwrap();
-                    let close_tag = ReaderError::of_markup_result(
+                    let close_tag = CloseTag::new(
                         span,
-                        CloseTag::new(
-                            span,
-                            ns_stack,
-                            &prefix,
-                            &name,
-                            TagExtra::new(token.get_depth(), false),
-                        ),
+                        ns_stack,
+                        &prefix,
+                        &name,
+                        TagExtra::new(token.get_depth(), false),
                     )?;
                     self.pending_close_tag = Some(close_tag);
                     Ok(None)
@@ -235,7 +229,7 @@ where
                             .add_attribute(span, ns_stack, &prefix, &name, value)?;
                         Ok(None)
                     } else {
-                        ReaderError::unexpected_attribute(span, &prefix, &name)
+                        HmlError::unexpected_attribute(span, &prefix, &name)
                     }
                 }
                 TokenType::Characters => {
@@ -267,24 +261,24 @@ where
 
     //mp next_event
     /// next_event
-    pub fn next_event<T, E: std::fmt::Debug>(
+    pub fn next_event<T>(
         &mut self,
         ns_stack: &mut NamespaceStack,
         mut get_token: T,
-    ) -> EventResult<P, E>
+    ) -> HmlResult<Event<P>, P>
     where
-        T: FnMut() -> std::result::Result<Token<P>, ReaderError<P, E>>,
+        T: FnMut() -> Option<HmlResult<Token<P>, P>>,
     {
         loop {
             if !self.start_emitted {
                 self.start_emitted = true;
-                let span = StreamCharSpan::new_at(&self.token_pos);
+                let span = Span::new_at(&self.token_pos);
                 return Ok(Event::start_document(span, self.version));
             } else if self.finished {
-                return ReaderError::no_more_events();
+                return HmlError::no_more_events();
             } else if self.end_emitted {
                 self.finished = true;
-                let span = StreamCharSpan::new_at(&self.token_pos);
+                let span = Span::new_at(&self.token_pos);
                 return Ok(Event::end_document(span));
             }
             if let Some(event) = {
@@ -297,8 +291,13 @@ where
                 } else if let Some(token) = self.pending_token.take() {
                     self.handle_token(ns_stack, token)
                 } else {
-                    let token = get_token()?;
-                    self.handle_token(ns_stack, token)
+                    if let Some(token) = get_token() {
+                        self.handle_token(ns_stack, token?)
+                    } else {
+                        let span = Span::new_at(&self.token_pos);
+                        let token = Token::eof(span);
+                        self.handle_token(ns_stack, token)
+                    }
                 }
             }? {
                 return Ok(event);

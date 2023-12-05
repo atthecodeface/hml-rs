@@ -1,9 +1,16 @@
 use std::fs::File;
+use std::io::{Read, Write};
 
 use clap::{value_parser, Arg, Command};
 
 use hml_rs::hml_reader::Parser;
 use hml_rs::names::{Namespace, NamespaceStack};
+
+use lexer_rs::FmtContext;
+use lexer_rs::{Lexer, LineColumn, StreamCharPos};
+
+type LexerPos = StreamCharPos<LineColumn>;
+type HmlError = hml_rs::HmlError<LexerPos>;
 
 fn main() {
     let matches = Command::new("hml")
@@ -38,22 +45,22 @@ fn main() {
             println!("Should read stdin");
         }
         Some(filename) => {
-            use std::io::Read;
             let mut file = File::open(filename).unwrap();
             let mut text = String::new();
             file.read_to_string(&mut text).unwrap();
-            let mut reader = hml_rs::string::Reader::new(&text);
             let mut namespace = Namespace::new(false);
             let mut namespace_stack = NamespaceStack::new(&mut namespace);
-            let mut lexer = hml_rs::hml_reader::Lexer::default();
-            let mut parser: Parser<lexer_rs::StreamCharPos<lexer_rs::LineColumn>> =
-                Parser::default().set_version(xml_version);
+            let lexer_string = lexer_rs::LexerOfString::default().set_text(text);
+            let lexer = lexer_string.lexer();
+            let lexer_parsers = hml_rs::hml_reader::parse_fns();
+            let mut lexer_iter = lexer.iter(&lexer_parsers);
+            let mut parser: Parser<LexerPos> = Parser::default().set_version(xml_version);
             let output = std::io::stdout();
             let mut writer = xml::writer::EmitterConfig::new()
                 .perform_indent(true)
                 .create_writer(output);
             loop {
-                match parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader)) {
+                match parser.next_event(&mut namespace_stack, || lexer_iter.next()) {
                     Ok(event) => {
                         if let Some(x) = event.as_xml_writer(&namespace_stack) {
                             writer.write(x).unwrap();
@@ -62,15 +69,15 @@ fn main() {
                         }
                     }
                     Err(e) => {
+                        let e: HmlError = e;
                         eprintln!("Parse error {e}");
-                        use lexer_rs::FmtContext;
                         if let Some(span) = e.borrow_span() {
                             let mut s = String::new();
-                            reader
+                            // reader
+                            lexer_string
                                 .fmt_context(&mut s, span.start(), span.end())
                                 .unwrap();
-                            use std::io::Write;
-                            writeln!(&mut std::io::stderr(), "{}", s);
+                            writeln!(&mut std::io::stderr(), "{}", s).unwrap();
                         }
                         break;
                     }

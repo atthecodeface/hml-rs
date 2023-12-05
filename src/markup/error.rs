@@ -1,7 +1,6 @@
 //a Result
 //tp Result
 /// The [Result] type is a result with an error type of [crate::Error]
-pub type Result<T> = std::result::Result<T, Error>;
 
 //tp Error
 /// Error for all HML

@@ -3,14 +3,18 @@
 #[allow(dead_code)]
 mod test_infrastructure {
     //a Imports
-    use crate::hml_reader::{Lexer, Parser};
+    use crate::hml_reader::Parser;
     use crate::markup::ContentType;
     use crate::names::{Name, Namespace, NamespaceStack, Tag};
-    use crate::reader::ReaderError;
-    use crate::string::Error as StringError;
-    use crate::string::Reader as StringReader;
+    use crate::HmlError;
     type StringPosition = lexer_rs::StreamCharPos<lexer_rs::LineColumn>;
-    type Event = crate::markup::Event<StringPosition>;
+
+    use lexer_rs::{Lexer, LexerOfString, LineColumn, StreamCharPos};
+
+    type LexerPos = StreamCharPos<LineColumn>;
+    type StringError = HmlError<LexerPos>;
+    type StringLexer = LexerOfString<LexerPos, crate::hml_reader::Token<LexerPos>, StringError>;
+    type Event = crate::markup::Event<LexerPos>;
 
     //a Expectation
     //tp Expectation
@@ -101,7 +105,7 @@ mod test_infrastructure {
         fn check_expectation(
             &mut self,
             ns_stack: &NamespaceStack,
-            t: Result<Event, ReaderError<StringPosition, StringError>>,
+            t: Result<Event, StringError>,
         ) -> Result<(), String> {
             self.index += 1;
             if self.index > self.expectations.len() {
@@ -147,7 +151,7 @@ mod test_infrastructure {
                         },
                     ),
                     Expectation::Content(et, es) => (
-                        format!("Expected a Content got {:?}", t),
+                        format!("Expected a Content {:?} got {:?}", et, t),
                         if t.is_err() {
                             false
                         } else {
@@ -178,22 +182,28 @@ mod test_infrastructure {
 
     //a Functions for test
     //fp test_string
-    pub fn test_string(s: &str, exp: &[Expectation]) {
+    pub fn test_string(text: &str, exp: &[Expectation]) {
         let mut expectation = ExpectationState::new(exp);
         let mut namespace = Namespace::new(true);
         let mut namespace_stack = NamespaceStack::new(&mut namespace);
         namespace_stack.add_null_ns();
-        let mut reader = StringReader::new(s);
-        let mut lexer = Lexer::default();
+        let lexer_string = StringLexer::default().set_text(text);
+        let lexer = lexer_string.lexer();
+        let lexer_parsers = crate::hml_reader::parse_fns();
+        let mut lexer_iter = lexer.iter(&lexer_parsers);
         let mut parser: Parser<lexer_rs::StreamCharPos<lexer_rs::LineColumn>> = Parser::default();
         let mut errors = Vec::new();
         loop {
-            let t = parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader));
+            let t = parser.next_event(&mut namespace_stack, || lexer_iter.next());
             // println!("{:?}", t);
             let eof = t.is_ok() && t.as_ref().unwrap().is_end_document();
+            let is_err = t.is_err();
             match expectation.check_expectation(&namespace_stack, t) {
                 Err(x) => {
                     errors.push(x);
+                    if is_err {
+                        break;
+                    }
                 }
                 _ => (),
             }
@@ -201,6 +211,7 @@ mod test_infrastructure {
                 break;
             }
         }
+        println!("{}", text);
         for e in &errors {
             println!("FAIL: {}", e);
         }

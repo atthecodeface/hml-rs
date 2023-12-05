@@ -1,16 +1,14 @@
 //a Imports
-use lexer_rs::{PosnInCharStream, StreamCharSpan};
-
 use crate::markup::Event;
 use crate::names::{Attributes, Name, NamespaceStack, Tag};
-use crate::reader::{Reader, ReaderError, Span};
+use crate::{HmlError, HmlResult, Posn, Span};
 
 //a Internal types
 //tp OpenTag
 #[derive(Clone, Debug)]
 pub struct OpenTag<P, T>
 where
-    P: PosnInCharStream,
+    P: Posn,
     T: std::fmt::Debug,
 {
     span: Span<P>,
@@ -22,7 +20,7 @@ where
 //ip OpenTag
 impl<P, T> OpenTag<P, T>
 where
-    P: PosnInCharStream,
+    P: Posn,
     T: std::fmt::Debug,
 {
     pub fn new(span: Span<P>, prefix: String, name: String, extra: T) -> Self {
@@ -42,7 +40,7 @@ where
 #[derive(Clone, Debug)]
 pub struct CloseTag<P, T>
 where
-    P: PosnInCharStream,
+    P: Posn,
     T: std::fmt::Debug,
 {
     span: Span<P>,
@@ -54,7 +52,7 @@ where
 //ip CloseTag
 impl<P, T> CloseTag<P, T>
 where
-    P: PosnInCharStream,
+    P: Posn,
     T: std::fmt::Debug,
 {
     pub fn new(
@@ -63,8 +61,8 @@ where
         prefix: &str,
         name: &str,
         extra: T,
-    ) -> crate::markup::Result<Self> {
-        let name = Name::new(ns_stack, prefix, name)?;
+    ) -> HmlResult<Self, P> {
+        let name = HmlError::map_markup_error(Name::new(ns_stack, prefix, name), &span)?;
         Ok(Self { span, name, extra })
     }
     pub fn span(&self) -> &Span<P> {
@@ -93,7 +91,7 @@ where
 #[derive(Debug)]
 pub struct StackElement<P, T>
 where
-    P: PosnInCharStream,
+    P: Posn,
     T: std::fmt::Debug,
 {
     parent_depth: usize,
@@ -105,7 +103,7 @@ where
 //ii StackElement
 impl<P, T> StackElement<P, T>
 where
-    P: PosnInCharStream,
+    P: Posn,
     T: std::fmt::Debug,
 {
     pub fn new(
@@ -124,30 +122,27 @@ where
             attributes,
         }
     }
-    pub fn add_attribute<E: std::fmt::Debug>(
+    pub fn add_attribute(
         &mut self,
         span: Span<P>,
         ns_stack: &mut NamespaceStack,
         prefix: &str,
         name: &str,
         value: String,
-    ) -> std::result::Result<(), ReaderError<P, E>> {
-        ReaderError::of_markup_result(span, self.attributes.add(ns_stack, prefix, name, value))
+    ) -> HmlResult<(), P> {
+        HmlError::map_markup_error(self.attributes.add(ns_stack, prefix, name, value), &span)
     }
 
-    pub fn as_start_element<E: std::fmt::Debug>(
-        &mut self,
-        ns_stack: &mut NamespaceStack,
-    ) -> std::result::Result<Event<P>, ReaderError<P, E>> {
+    pub fn as_start_element(&mut self, ns_stack: &mut NamespaceStack) -> HmlResult<Event<P>, P> {
         let attributes = std::mem::take(&mut self.attributes);
-        let tag = ReaderError::of_markup_result(
-            self.open_tag.span,
+        let tag = HmlError::map_markup_error(
             Tag::new(
                 ns_stack,
                 &self.open_tag.prefix,
                 &self.open_tag.name,
                 attributes,
             ),
+            &self.open_tag.span,
         )?;
         self.tag_name = tag.name;
         Ok(Event::start_element(self.open_tag.span, tag))
@@ -155,7 +150,7 @@ where
     pub fn as_end_element(
         &self,
         ns_stack: &mut NamespaceStack,
-        span: &StreamCharSpan<P>,
+        span: &Span<P>,
     ) -> (Event<P>, usize) {
         ns_stack.pop_frame();
         (Event::end_element(*span, self.tag_name), self.parent_depth)

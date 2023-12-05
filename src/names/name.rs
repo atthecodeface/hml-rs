@@ -1,25 +1,7 @@
-/*a Copyright
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-@file    name.rs
-@brief   Markup name (prefix => URI and name within namespace)
- */
-
 //a Imports
 use super::NamespaceStack;
 use super::{NSNameId, NSPrefixId, NSUriId};
-use crate::markup;
+use crate::{MarkupError, MarkupResult};
 
 //a Name
 //tp Name
@@ -54,9 +36,9 @@ impl Name {
 
     //fp new_local
     /// Create a [Name] from a name with an prefix of None
-    pub fn new_local(ns: &mut NamespaceStack, name: &str) -> markup::Result<Self> {
+    pub fn new_local(ns: &mut NamespaceStack, name: &str) -> MarkupResult<Self> {
         if name.is_empty() {
-            return crate::markup::Error::empty_name();
+            return Err(MarkupError::empty_name());
         }
         let prefix = NSPrefixId::none();
         let uri = NSUriId::none();
@@ -70,9 +52,9 @@ impl Name {
     /// If the name is illegal (empty) or the prefix is not mapped (an
     /// empty prefix can be mapped in the namespace by default, so an
     /// empty prefix is not illegal per s) then an error is returned.
-    pub fn new(ns: &mut NamespaceStack, prefix: &str, name: &str) -> crate::markup::Result<Self> {
+    pub fn new(ns: &mut NamespaceStack, prefix: &str, name: &str) -> MarkupResult<Self> {
         if name.is_empty() {
-            return crate::markup::Error::empty_name();
+            return Err(MarkupError::empty_name());
         }
         if let Some(p_id) = ns.find_prefix_id(prefix) {
             if let Some(uri) = ns.find_mapping(p_id) {
@@ -83,10 +65,10 @@ impl Name {
                     name,
                 })
             } else {
-                crate::markup::Error::unmapped_prefix(prefix)
+                Err(MarkupError::unmapped_prefix(prefix))
             }
         } else {
-            crate::markup::Error::unmapped_prefix(prefix)
+            Err(MarkupError::unmapped_prefix(prefix))
         }
     }
 
@@ -97,12 +79,12 @@ impl Name {
     ///
     /// A well-formed string is either <ns>:<name> or <name>; two ':'
     /// characters are illegal
-    pub fn from_str(ns: &mut NamespaceStack, s: &str) -> crate::markup::Result<Self> {
+    pub fn from_str(ns: &mut NamespaceStack, s: &str) -> MarkupResult<Self> {
         let mut it = s.split(':');
         match (it.next(), it.next(), it.next()) {
             (Some(prefix), Some(name), None) => Self::new(ns, prefix, name),
             (Some(name), None, None) => Self::new_local(ns, name),
-            _ => crate::markup::Error::bad_name(s),
+            _ => Err(MarkupError::bad_name(s)),
         }
     }
 

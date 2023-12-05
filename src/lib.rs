@@ -216,8 +216,15 @@ Escapes supported are as per Rust:
 
 !*/
 
+pub use lexer_rs::PosnInCharStream as Posn;
+pub type Span<P> = lexer_rs::StreamCharSpan<P>;
+
 pub mod escape;
 pub mod hml;
+
+// For now expose these
+mod error;
+pub use error::{HmlError, HmlResult, MarkupError, MarkupResult};
 
 // Expose names::{NSNameId, NSPrefixId, NSUriId, NSMap};
 //        names::{Namespace, NamespaceStack, Name, Attribute, Attributes, Tag};
@@ -226,11 +233,8 @@ pub mod names;
 // Expose markup::Span, Error, Result, Event, EventType
 pub mod markup;
 
-// Expose hml_reader::{Position, Character, Error, Reader, Span, Result}
-pub mod reader;
-
 // Expose hml_reader::{Lexer, Parser, ReaderError}
 pub mod hml_reader;
 
-mod implementations;
-pub use implementations::string;
+// mod implementations;
+// pub use implementations::string;

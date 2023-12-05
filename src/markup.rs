@@ -11,9 +11,7 @@ streams.
 !*/
 
 //a Imports
-mod error;
 mod event;
 
 //a Exports
-pub use error::{Error, Result};
 pub use event::{ContentType, Event, EventType};
