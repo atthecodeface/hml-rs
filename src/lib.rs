@@ -216,13 +216,23 @@ Escapes supported are as per Rust:
 
 !*/
 
+/// The trait required for a position within a stream that is being
+/// parsed; this is implemented by 'usize', as well as
+/// lexer_rs::LineColumn (which also records the line and column of
+/// the text stream being parsed)
 pub use lexer_rs::PosnInCharStream as Posn;
+
+/// A span of a token etc in the parser; this contains just start and
+/// end positions.
 pub type Span<P> = lexer_rs::StreamCharSpan<P>;
 
+//
 pub mod escape;
+
+// Probably exposes nothing - it as HML escapes in some form
 pub mod hml;
 
-// For now expose these
+// All the errors the library can return
 mod error;
 pub use error::{HmlError, HmlResult, MarkupError, MarkupResult};
 
@@ -230,8 +240,8 @@ pub use error::{HmlError, HmlResult, MarkupError, MarkupResult};
 //        names::{Namespace, NamespaceStack, Name, Attribute, Attributes, Tag};
 pub mod names;
 
-// Expose markup::Span, Error, Result, Event, EventType
+// Expose markup::ContentType, Event, EventType - these are now all in markup/event.rs
 pub mod markup;
 
-// Expose hml_reader::{Lexer, Parser, ReaderError}
+// Expose hml_reader::{Parser, parse_fns}
 pub mod hml_reader;

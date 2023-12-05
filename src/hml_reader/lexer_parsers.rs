@@ -604,4 +604,6 @@ fn test_parse_attribute() {
     assert_eq!(contents[0], "");
     assert_eq!(contents[1], "fred");
     assert_eq!(contents[2], "this");
+
+    assert!(l.peek_at(&posn).is_none());
 }

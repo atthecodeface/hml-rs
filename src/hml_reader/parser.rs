@@ -290,14 +290,12 @@ where
                     self.handle_open_tag(ns_stack, open_tag)
                 } else if let Some(token) = self.pending_token.take() {
                     self.handle_token(ns_stack, token)
+                } else if let Some(token) = get_token() {
+                    self.handle_token(ns_stack, token?)
                 } else {
-                    if let Some(token) = get_token() {
-                        self.handle_token(ns_stack, token?)
-                    } else {
-                        let span = Span::new_at(&self.token_pos);
-                        let token = Token::eof(span);
-                        self.handle_token(ns_stack, token)
-                    }
+                    let span = Span::new_at(&self.token_pos);
+                    let token = Token::eof(span);
+                    self.handle_token(ns_stack, token)
                 }
             }? {
                 return Ok(event);

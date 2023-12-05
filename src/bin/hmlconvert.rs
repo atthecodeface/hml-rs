@@ -71,7 +71,7 @@ fn main() {
                     Err(e) => {
                         let e: HmlError = e;
                         eprintln!("Parse error {e}");
-                        if let Some(span) = e.borrow_span() {
+                        if let Some(span) = e.span() {
                             let mut s = String::new();
                             // reader
                             lexer_string
