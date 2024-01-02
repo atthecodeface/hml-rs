@@ -1,3 +1,13 @@
+# Release 0.3.0 (2023-12-02)
+
+- Removed the lexer, to use lexer_rs instead; this reduces code to
+  support, and improves the error reporting capability; it is a
+  significant change to the invocation of the HML parsing
+
+- Added mapping of markup events to xml_rs events
+
+**Contributors**: @atthecodeface
+
 # Release 0.2.0 (2023-11-23)
 
 - Changed borrow_*_str in namespace to *_str, with the user providing a default
