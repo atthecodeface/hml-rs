@@ -1,6 +1,6 @@
 //a Documentation
 #![warn(missing_docs)]
-#![warn(missing_doc_code_examples)]
+// #![warn(missing_doc_code_examples)]
 /*!
 
 # Escape handling
