@@ -1,4 +1,8 @@
-# Release 0.3.0 (2023-12-02, 2025-01-24)
+# Release 0.3.1 (2025-01-24)
+
+- Updated README.md
+
+# Release 0.3.0 (2023-12-02)
 
 - Updated README.md
 
