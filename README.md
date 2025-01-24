@@ -1,25 +1,37 @@
-# bezier-nd
+# hml-rs
 
-A Bezier curve class supporting linear, quadratic and cubic Bezier curves,
-using an arbitrary point class.
+A parser for human-readable markup language, which is in large part equally powerful with XML.
 
-Example uses would be for 2-dimensional Bezier curves whose
-coordinates are `[f64; 2]`, or for 3-dimensional Bezier curves using
-coordinates of `[f32; 3]`.
+An example file is:
 
-The Bezier curve supports bisection, and then splitting into straight
-lines within a given `straightness` bound; iterators are provided to
-automatically trace a Bezier as lines or points within such a
-straightness, for rendering puroses.
+```text
+; The toplevel element is the library, which contains 'dvd' elements
+; each dvd element should have a title and other data, and contents of director(s), producer(s) and actor(s)
+; an actor should be named and have a part
+#library
+##dvd title="Wizard of Oz" release_date="15 Aug 1939" running_time="101"
+###director name="Victor Fleming"
+###actor name="Judy Garland"       part="Dorothy"
+###actor name="Frank Morgan"       part="The Wizard"
+###actor name="Ray Bolger"         part="Scarecrow"
+###actor name="Bret Lahr"          part="Cowardly Lion"
+###actor name="Jack Haley"         part="Tin Man"
+###actor name="Margaret Hamilton"  part="Wicked Witch of the West"
+###actor name="Billie Burke"       part="Glinda the Good Witch of the North"
 
-The Bezier type also supports rounding of corners and circular arc
-generation, utilizing a very accurate function for any angle of
-rounding up to 180 degrees, derived from a curve-fit from experimental
-data, rather than an explicit mathematical function for the control
-point generation (the standard analytical approach).
+##dvd title="Gone With the Wind" release_date="15 Dec 1939" running_time="221"
+###director name="Victor Fleming"
+###actor name="Clark Gable"         part="Rhett Butler"
+###actor name="Vivien Leigh"        part="Scarlett O'Hara"
+###actor name="Leslie Howard"       part="Ashley Wilkes"
+###actor name="Olivia de Haviland"  part="Melanie Wilkes"
 
-This crate is in beta; it is used in a small number of applications,
-and the functionality is mature; the API is stable, but may be enhanced.
+##dvd{ title="Mr. Smith Goes to Washington" release_data="17 Oct 1939" running_time="125"
+#director name="Frank Capra"
+#actor    name="Jean Arthur"    part="Clarissa Saunders"
+#actor    name="James Stewart"  part="Jefferson Smith"
+##dvd}
+```
 
 ## Usage
 
@@ -27,7 +39,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-bezier-nd = "0.1.4"
+hml-rs = "0.3.0"
 ```
 
 ## Releases

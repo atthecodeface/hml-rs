@@ -1,4 +1,6 @@
-# Release 0.3.0 (2023-12-02)
+# Release 0.3.0 (2023-12-02, 2025-01-24)
+
+- Updated README.md
 
 - Removed the lexer, to use lexer_rs instead; this reduces code to
   support, and improves the error reporting capability; it is a
